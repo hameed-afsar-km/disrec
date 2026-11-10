@@ -374,19 +374,19 @@ export function VoiceQuickReportModal({
       className="!max-w-5xl max-h-[92vh] flex flex-col p-0 overflow-hidden"
     >
       {/* Top Header Toolbar */}
-      <div className="bg-slate-900 text-white p-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800">
+      <div className="bg-gradient-to-r from-red-50/90 via-orange-50/70 to-amber-50/50 text-[#101b2d] p-4 flex flex-wrap items-center justify-between gap-3 border-b border-orange-100">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-red-600/20 border border-red-500/40 text-red-400">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-[#e53945] to-orange-500 text-white shadow-sm shadow-red-200">
             <Mic size={18} className="animate-pulse" />
           </div>
           <div>
-            <h3 className="text-sm font-bold flex items-center gap-2">
+            <h3 className="text-sm font-bold flex items-center gap-2 text-[#101b2d]">
               Multi-Language Voice Triage
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300">
                 LIVE STT
               </span>
             </h3>
-            <p className="text-xs text-slate-400">Speak naturally in your language; AI extracts incident & family status</p>
+            <p className="text-xs text-slate-500">Speak naturally in your language; AI extracts incident & family status</p>
           </div>
         </div>
 
@@ -396,21 +396,21 @@ export function VoiceQuickReportModal({
           <button
             type="button"
             onClick={() => setAudioFeedback(!audioFeedback)}
-            className={`p-1.5 rounded-lg border text-xs transition-colors flex items-center gap-1 ${
+            className={`p-1.5 rounded-lg border text-xs transition-colors flex items-center gap-1.5 ${
               audioFeedback
-                ? 'bg-blue-600/30 border-blue-500 text-blue-300'
-                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                ? 'bg-orange-100/80 border-orange-300 text-orange-700 font-semibold'
+                : 'bg-white border-slate-200 text-slate-600 hover:text-orange-600 hover:border-orange-200 shadow-2xs'
             }`}
             title={audioFeedback ? 'Voice Speech Output Enabled' : 'Voice Speech Output Muted'}
           >
-            {audioFeedback ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            {audioFeedback ? <Volume2 size={15} className="text-orange-600" /> : <VolumeX size={15} />}
             <span className="text-[11px] font-medium hidden sm:inline">
               {audioFeedback ? 'Voice On' : 'Muted'}
             </span>
           </button>
 
           {/* Language Selector */}
-          <div className="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg p-0.5">
+          <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 shadow-2xs">
             <Globe size={14} className="text-slate-400 ml-1.5" />
             <select
               value={selectedLang}
@@ -418,10 +418,10 @@ export function VoiceQuickReportModal({
                 setSelectedLang(e.target.value)
                 stopListening()
               }}
-              className="bg-transparent text-white text-xs font-semibold focus:outline-none pr-2 py-1 cursor-pointer"
+              className="bg-transparent text-slate-800 text-xs font-semibold focus:outline-none pr-2 py-1 cursor-pointer"
             >
               {AI_LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code} className="bg-slate-900 text-white">
+                <option key={l.code} value={l.code} className="bg-white text-slate-800">
                   {l.label} ({l.name})
                 </option>
               ))}
@@ -444,21 +444,21 @@ export function VoiceQuickReportModal({
                 className={`flex items-start gap-2.5 ${m.role === 'user' ? 'justify-end' : ''}`}
               >
                 {m.role === 'assistant' && (
-                  <div className="p-1.5 rounded-lg bg-blue-100 text-blue-700 shrink-0 mt-0.5">
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-red-100 to-orange-100 text-orange-600 border border-orange-200 shrink-0 mt-0.5">
                     <Bot size={16} />
                   </div>
                 )}
                 <div
                   className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed shadow-sm ${
                     m.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-tr-none'
+                      ? 'bg-gradient-to-r from-[#e53945] to-orange-500 text-white rounded-tr-none shadow-red-200'
                       : 'bg-white text-slate-800 border border-slate-200/80 rounded-tl-none'
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{m.content}</p>
                 </div>
                 {m.role === 'user' && (
-                  <div className="p-1.5 rounded-lg bg-slate-200 text-slate-700 shrink-0 mt-0.5">
+                  <div className="p-1.5 rounded-lg bg-orange-100 text-orange-700 shrink-0 mt-0.5">
                     <User size={16} />
                   </div>
                 )}
@@ -468,15 +468,15 @@ export function VoiceQuickReportModal({
             {/* Interim live speech recognition streaming */}
             {listening && speechInterim && (
               <div className="flex items-start justify-end gap-2 text-xs">
-                <div className="max-w-[85%] rounded-2xl px-3 py-2 bg-blue-500/20 text-blue-900 border border-blue-400/30 italic animate-pulse">
+                <div className="max-w-[85%] rounded-2xl px-3 py-2 bg-orange-50 text-orange-950 border border-orange-200 italic animate-pulse">
                   🎙️ {speechInterim}...
                 </div>
               </div>
             )}
 
             {isProcessing && (
-              <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 p-2.5 rounded-xl border border-blue-100 w-fit">
-                <Loader2 size={15} className="animate-spin" />
+              <div className="flex items-center gap-2 text-xs text-orange-700 bg-orange-50/90 p-2.5 rounded-xl border border-orange-200 w-fit">
+                <Loader2 size={15} className="animate-spin text-orange-500" />
                 <span>AI is analyzing voice input & assessing triage fields...</span>
               </div>
             )}
@@ -490,21 +490,21 @@ export function VoiceQuickReportModal({
               <button
                 type="button"
                 onClick={() => handleSendMessage("My family is with me and we are safe.")}
-                className="bg-white hover:bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors"
+                className="bg-white hover:bg-orange-50 hover:border-orange-300 hover:text-orange-950 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors shadow-2xs"
               >
                 🛡️ "Family is safe with me"
               </button>
               <button
                 type="button"
                 onClick={() => handleSendMessage("Someone is trapped inside, please hurry!")}
-                className="bg-white hover:bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors"
+                className="bg-white hover:bg-orange-50 hover:border-orange-300 hover:text-orange-950 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors shadow-2xs"
               >
                 ⚠️ "Someone is trapped inside"
               </button>
               <button
                 type="button"
                 onClick={() => handleSendMessage("There is a strong gas smell and smoke rising.")}
-                className="bg-white hover:bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors"
+                className="bg-white hover:bg-orange-50 hover:border-orange-300 hover:text-orange-950 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 transition-colors shadow-2xs"
               >
                 🔥 "Gas smell / smoke rising"
               </button>
@@ -520,11 +520,12 @@ export function VoiceQuickReportModal({
             >
               <Button
                 type="button"
-                variant={listening ? 'danger' : 'primary'}
                 size="md"
                 onClick={toggleListening}
-                className={`relative px-4 transition-all duration-200 ${
-                  listening ? 'animate-pulse ring-4 ring-red-400/40' : 'bg-red-600 hover:bg-red-700 text-white'
+                className={`relative px-4 transition-all duration-200 text-white font-bold ${
+                  listening
+                    ? 'animate-pulse ring-4 ring-red-400/50 bg-red-600'
+                    : 'bg-gradient-to-r from-[#e53945] to-orange-500 hover:opacity-95 shadow-md shadow-red-200'
                 }`}
                 title={listening ? 'Stop Microphone' : 'Start Multi-Language Microphone'}
               >
@@ -539,19 +540,17 @@ export function VoiceQuickReportModal({
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder={`Speak or type in ${getLanguageName(selectedLang)}...`}
-                className="min-w-0 flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="min-w-0 flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                 disabled={isProcessing}
               />
 
-              <Button
+              <button
                 type="submit"
-                variant="primary"
-                size="md"
                 disabled={isProcessing || !inputText.trim()}
-                className="px-3.5"
+                className="h-10 px-3.5 rounded-lg bg-gradient-to-r from-[#e53945] to-orange-500 text-white font-semibold flex items-center justify-center hover:opacity-95 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
               >
                 <Send size={16} />
-              </Button>
+              </button>
             </form>
           </div>
         </div>
@@ -561,7 +560,7 @@ export function VoiceQuickReportModal({
           <div>
             <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles size={14} className="text-blue-600" />
+                <Sparkles size={14} className="text-orange-500" />
                 Live Structured Report
               </h4>
               {extracted?.isReadyToSubmit && (
@@ -619,13 +618,13 @@ export function VoiceQuickReportModal({
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 text-xs">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <MapPin size={12} className="text-blue-500" /> Location
+                      <MapPin size={12} className="text-orange-500" /> Location
                     </span>
                     <button
                       type="button"
                       onClick={detectGps}
                       disabled={fetchingGps}
-                      className="text-[10px] text-blue-600 hover:underline flex items-center gap-1"
+                      className="text-[10px] text-orange-600 hover:text-red-600 hover:underline flex items-center gap-1 font-medium"
                     >
                       <Navigation size={10} className={fetchingGps ? 'animate-spin' : ''} />
                       {fetchingGps ? 'Locking GPS...' : 'Refresh GPS'}
@@ -654,11 +653,11 @@ export function VoiceQuickReportModal({
               </div>
             ) : (
               /* Empty state before voice input */
-              <div className="py-12 px-4 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
+              <div className="py-12 px-4 text-center border-2 border-dashed border-orange-200/80 rounded-2xl bg-orange-50/20">
+                <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 border border-orange-200/80 flex items-center justify-center mx-auto mb-3 shadow-xs">
                   <Mic size={22} className="animate-pulse" />
                 </div>
-                <h5 className="text-xs font-bold text-slate-700 mb-1">
+                <h5 className="text-xs font-bold text-slate-800 mb-1">
                   Waiting for your voice report...
                 </h5>
                 <p className="text-[11px] text-slate-500 max-w-xs mx-auto leading-relaxed">
@@ -670,13 +669,11 @@ export function VoiceQuickReportModal({
 
           {/* Action Footer Buttons */}
           <div className="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-2">
-            <Button
+            <button
               type="button"
-              variant="danger"
-              size="md"
               onClick={handleSubmitReport}
               disabled={isSubmitting || !extracted}
-              className="w-full min-h-10 h-auto whitespace-normal py-2.5 font-bold text-center text-xs sm:text-sm shadow-lg shadow-red-600/20"
+              className="w-full min-h-10 h-auto whitespace-normal py-2.5 px-4 font-bold text-center text-xs sm:text-sm rounded-xl bg-gradient-to-r from-[#e53945] to-orange-500 text-white hover:from-red-600 hover:to-orange-600 shadow-md shadow-red-200 hover:shadow-lg disabled:opacity-45 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -689,18 +686,16 @@ export function VoiceQuickReportModal({
                   Submit Emergency Report Now
                 </>
               )}
-            </Button>
+            </button>
 
             {extracted && (
-              <Button
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
                 onClick={handleTransfer}
-                className="w-full text-xs text-slate-600 hover:text-slate-900 border-slate-200"
+                className="w-full py-2 px-3 text-xs font-semibold text-slate-600 hover:text-orange-600 hover:border-orange-300 hover:bg-orange-50/30 border border-slate-200 rounded-xl transition-all"
               >
                 Transfer to Full Form & Add Photos →
-              </Button>
+              </button>
             )}
           </div>
 

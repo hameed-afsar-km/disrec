@@ -358,28 +358,28 @@ function ReportForm() {
       {/* Voice Quick Report Callout Banner */}
       <div
         onClick={() => setVoiceModalOpen(true)}
-        className="mb-8 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-red-950 via-slate-900 to-blue-950 text-white border border-red-500/40 shadow-xl cursor-pointer hover:border-red-400/80 transition-all group"
+        className="mb-8 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-red-50 via-orange-50 to-amber-50/70 border-2 border-red-200/80 shadow-md shadow-red-50 cursor-pointer hover:border-red-300 hover:shadow-lg transition-all group"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3.5">
-            <div className="p-3 rounded-2xl bg-red-600 text-white shadow-lg shadow-red-600/50 group-hover:scale-105 transition-transform shrink-0">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-[#e53945] to-orange-500 text-white shadow-md shadow-red-200 group-hover:scale-105 transition-transform shrink-0">
               <Mic size={22} className="animate-pulse" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-extrabold text-sm sm:text-base">Hands-Free Voice AI Quick Report</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/40">
+                <span className="font-black text-sm sm:text-base text-[#101b2d]">Hands-Free Voice AI Quick Report</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
                   MULTI-LINGUAL STT
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Speak in English, Hindi, Bengali, Tamil, or Telugu. AI automatically extracts location, severity, and asks about family safety.
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="hidden sm:flex text-white hover:bg-white/10 shrink-0">
+          <button className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 group-hover:text-red-600 group-hover:border-red-300 shadow-xs transition-colors shrink-0">
             Start Speaking →
-          </Button>
+          </button>
         </div>
       </div>
 

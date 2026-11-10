@@ -45,6 +45,22 @@ export interface ResponseTeam {
   updatedAt: string
 }
 
+export type ShelterStatus = 'open' | 'full' | 'closed'
+
+export interface Shelter {
+  shelterId: string
+  name: string
+  address: string
+  latitude: number
+  longitude: number
+  capacity: number
+  occupancy: number
+  status: ShelterStatus
+  amenities: string[]
+  contactPhone?: string
+  updatedAt: string
+}
+
 export type SOSStatus = 'active' | 'acknowledged' | 'in_progress' | 'resolved' | 'cancelled'
 
 export type AlertStatus = 'draft' | 'published' | 'expired'
