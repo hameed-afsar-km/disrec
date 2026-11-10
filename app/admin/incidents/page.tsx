@@ -16,6 +16,7 @@ import {
 import {
   subscribeToAllIncidents,
   updateIncident,
+  deleteIncident,
   logAdminAction,
   nowISO
 } from '@/lib/firestore'
@@ -72,7 +73,7 @@ export default function AdminIncidentsPage() {
     if (!deleteTarget) return
     setDeleting(true)
     try {
-      await deleteDoc(doc(db, 'incidents', deleteTarget.incidentId))
+      await deleteIncident(deleteTarget.incidentId)
       await logAdminAction({
         adminId: firebaseUser?.uid || 'admin',
         adminName: appUser?.name || 'Administrator',
@@ -200,16 +201,32 @@ export default function AdminIncidentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((inc) => (
-                  <tr key={inc.incidentId} className="hover:bg-slate-50/80 transition-colors">
+                {filtered.map((inc) => {
+                  const isCritical = inc.severity === 'critical';
+                  return (
+                  <tr
+                    key={inc.incidentId}
+                    className={`transition-colors ${
+                      isCritical
+                        ? 'bg-red-50/70 border-l-4 border-l-red-600 hover:bg-red-50'
+                        : 'hover:bg-slate-50/80'
+                    }`}
+                  >
                     {/* ID & Category */}
                     <td className="p-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{categoryIcons[inc.category] || '⚠️'}</span>
                         <div>
-                          <span className="font-mono text-xs font-bold text-slate-800">
-                            #{inc.incidentId.slice(-6)}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs font-bold text-slate-800">
+                              #{inc.incidentId.slice(-6)}
+                            </span>
+                            {isCritical && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-red-600 text-white animate-pulse">
+                                CRITICAL
+                              </span>
+                            )}
+                          </div>
                           <span className="block text-[10px] text-slate-400 capitalize">
                             {inc.category.replace('_', ' ')}
                           </span>
@@ -285,7 +302,7 @@ export default function AdminIncidentsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>

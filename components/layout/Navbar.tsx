@@ -41,25 +41,27 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handler)
   }, [])
 
-  useEffect(() => setMobileOpen(false), [pathname])
-
   return (
-    <header
-      className={cn(
-        'sticky top-0 z-40 w-full transition-all duration-200',
-        scrolled
-          ? 'bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm'
-          : 'bg-white border-b border-slate-100'
-      )}
-    >
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-40 w-full px-3 pt-3 sm:px-6 sm:pt-4">
+      <nav
+        className={cn(
+          'relative mx-auto flex h-14 max-w-6xl rounded-[1.75rem] border backdrop-blur-xl transition-all duration-300 sm:h-16',
+          scrolled
+            ? 'border-slate-200/80 bg-white/95 shadow-[0_18px_50px_-20px_rgba(15,23,42,0.45)]'
+            : 'border-white/70 bg-white/80 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]'
+        )}
+      >
+        <div className="flex h-full w-full items-center justify-between gap-2 pl-3 pr-2 sm:pl-4 sm:pr-3">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl text-[#101b2d]">
+          <Link
+            href="/"
+            onClick={() => setMobileOpen(false)}
+            className="flex shrink-0 items-center gap-2 font-bold text-xl text-[#101b2d]"
+          >
             <div className="w-8 h-8 bg-[#e53945] rounded-lg flex items-center justify-center">
               <Radio size={16} className="text-white" />
             </div>
-            <span>RespondAI</span>
+            <span>Dis<span className="bg-gradient-to-r from-[#e53945] to-orange-500 bg-clip-text text-transparent">rec</span></span>
           </Link>
 
           {/* Desktop nav */}
@@ -176,11 +178,12 @@ export function Navbar() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-slate-100 py-3 space-y-1">
+          <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 space-y-1 rounded-3xl border border-slate-200/80 bg-white/95 p-3 shadow-[0_18px_50px_-20px_rgba(15,23,42,0.45)] backdrop-blur-xl md:hidden">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
+                onClick={() => setMobileOpen(false)}
                 className={cn(
                   'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium',
                   pathname === href
@@ -195,19 +198,19 @@ export function Navbar() {
             <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
               {firebaseUser ? (
                 <>
-                  <Link href="/sos">
+                  <Link href="/sos" onClick={() => setMobileOpen(false)}>
                     <Button variant="danger" size="sm" className="w-full">
                       <AlertTriangle size={14} /> SOS Emergency
                     </Button>
                   </Link>
-                  <Link href="/report">
+                  <Link href="/report" onClick={() => setMobileOpen(false)}>
                     <Button variant="primary" size="sm" className="w-full">Report Emergency</Button>
                   </Link>
-                  <Link href="/dashboard">
+                  <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
                     <Button variant="outline" size="sm" className="w-full">My Dashboard</Button>
                   </Link>
                   <button
-                    onClick={signOut}
+                    onClick={() => { setMobileOpen(false); signOut() }}
                     className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
                   >
                     <LogOut size={14} /> Sign Out
@@ -215,8 +218,8 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/login"><Button variant="outline" size="sm" className="w-full">Sign In</Button></Link>
-                  <Link href="/register"><Button variant="primary" size="sm" className="w-full">Get Started</Button></Link>
+                  <Link href="/login" onClick={() => setMobileOpen(false)}><Button variant="outline" size="sm" className="w-full">Sign In</Button></Link>
+                  <Link href="/register" onClick={() => setMobileOpen(false)}><Button variant="primary" size="sm" className="w-full">Get Started</Button></Link>
                 </>
               )}
             </div>

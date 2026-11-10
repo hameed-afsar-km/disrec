@@ -69,7 +69,7 @@ export default function RegisterPage() {
       document.cookie = `auth-token=1; path=/; max-age=86400; SameSite=Lax`
       document.cookie = `user-role=user; path=/; max-age=86400; SameSite=Lax`
 
-      toast.success('Account created! Welcome to RespondAI.')
+      toast.success('Account created! Welcome to Disrec.')
       router.push('/dashboard')
     } catch (err: unknown) {
       const code = (err as { code?: string }).code

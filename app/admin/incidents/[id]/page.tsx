@@ -8,6 +8,7 @@ import { useAuth } from '@/components/auth/AuthProvider'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { SeverityBadge, StatusBadge } from '@/components/ui/Badge'
+import { Markdown } from '@/components/ui/Markdown'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import {
   ArrowLeft, Shield, MapPin, Users, Calendar, AlertTriangle,
@@ -456,8 +457,8 @@ export default function AdminIncidentDetailPage({
               </p>
 
               {aiAnalysis ? (
-                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-lg text-xs text-slate-800 whitespace-pre-wrap leading-relaxed">
-                  {aiAnalysis}
+                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-lg">
+                  <Markdown content={aiAnalysis} className="text-xs" />
                 </div>
               ) : null}
 

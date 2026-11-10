@@ -9,15 +9,60 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { SeverityBadge } from '@/components/ui/Badge'
 import {
   AlertTriangle, MapPin, Upload, Sparkles, CheckCircle2,
-  AlertCircle, Users, Phone, ArrowLeft, Loader2, Navigation
+  AlertCircle, Users, Phone, ArrowLeft, Loader2, Navigation, X, ImageIcon
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createIncident, nowISO } from '@/lib/firestore'
 import { generateId } from '@/lib/utils'
 import type { EmergencyCategory, Severity, Incident } from '@/lib/types'
 import { CATEGORY_LABELS, SEVERITY_LABELS } from '@/lib/types'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { storage } from '@/lib/firebase'
+
+// Helper to convert selected image files into lightweight local base64 Data URLs
+async function fileToLocalDataUrl(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const maxDim = 800
+          let width = img.width
+          let height = img.height
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width)
+              width = maxDim
+            } else {
+              width = Math.round((width * maxDim) / height)
+              height = maxDim
+            }
+          }
+
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height)
+            resolve(canvas.toDataURL('image/jpeg', 0.75))
+            return
+          }
+          resolve((e.target?.result as string) || '')
+        }
+        img.onerror = () => resolve((e.target?.result as string) || '')
+        img.src = e.target?.result as string
+      }
+      reader.onerror = () => resolve('')
+      reader.readAsDataURL(file)
+    } else {
+      const reader = new FileReader()
+      reader.onload = (e) => resolve((e.target?.result as string) || '')
+      reader.onerror = () => resolve('')
+      reader.readAsDataURL(file)
+    }
+  })
+}
 
 const CATEGORIES: { value: EmergencyCategory; label: string; icon: string }[] = [
   { value: 'fire', label: 'Fire Emergency', icon: '🔥' },
@@ -46,6 +91,7 @@ function ReportForm() {
   const [contactPhone, setContactPhone] = useState('')
   const [severity, setSeverity] = useState<Severity>('medium')
   const [files, setFiles] = useState<File[]>([])
+  const [filePreviews, setFilePreviews] = useState<{ name: string; size: number; dataUrl: string }[]>([])
 
   // UI state
   const [detectingLocation, setDetectingLocation] = useState(false)
@@ -139,12 +185,26 @@ function ReportForm() {
     }
   }
 
-  // Handle file select
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files) {
-      const selected = Array.from(e.target.files).slice(0, 4) // max 4 files
-      setFiles(selected)
+  // Handle local file select and generate immediate local previews
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files) return
+    const selected = Array.from(e.target.files)
+    const combined = [...files, ...selected].slice(0, 4) // max 4 files
+    setFiles(combined)
+
+    const previews: { name: string; size: number; dataUrl: string }[] = []
+    for (const f of combined) {
+      const dataUrl = await fileToLocalDataUrl(f)
+      previews.push({ name: f.name, size: f.size, dataUrl })
     }
+    setFilePreviews(previews)
+  }
+
+  function handleRemoveFile(index: number) {
+    const updatedFiles = files.filter((_, i) => i !== index)
+    const updatedPreviews = filePreviews.filter((_, i) => i !== index)
+    setFiles(updatedFiles)
+    setFilePreviews(updatedPreviews)
   }
 
   // Handle form submit
@@ -167,14 +227,10 @@ function ReportForm() {
 
     setSubmitting(true)
     try {
-      // Upload evidence files to Firebase Storage if present
-      const evidenceUrls: string[] = []
-      for (const file of files) {
-        const fileRef = ref(storage, `evidence/${firebaseUser.uid}/${Date.now()}-${file.name}`)
-        await uploadBytes(fileRef, file)
-        const url = await getDownloadURL(fileRef)
-        evidenceUrls.push(url)
-      }
+      // Use locally processed image data URLs (no Firebase Storage network upload needed)
+      const evidenceUrls: string[] = filePreviews
+        .map((p) => p.dataUrl)
+        .filter(Boolean)
 
       const now = nowISO()
       const incidentData: Omit<Incident, 'incidentId'> = {
@@ -405,6 +461,40 @@ function ReportForm() {
                 </div>
               </div>
             </div>
+
+            {/* Aadhaar Family Quick-Safety Selection */}
+            {appUser?.familyMembers && appUser.familyMembers.length > 0 && (
+              <div className="pt-2 border-t border-slate-100">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Linked Aadhaar Family Members at/near Incident Location (Optional):</span>
+                  <span className="text-[10px] text-blue-600 font-normal">Check if any family member is in this vicinity</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {appUser.familyMembers.map((m) => (
+                    <label
+                      key={m.id}
+                      className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs"
+                    >
+                      <input
+                        type="checkbox"
+                        className="rounded accent-blue-600"
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setDescription((prev) =>
+                              prev ? `${prev}\n[Family Alert]: ${m.name} (${m.relation}) is in this incident area.` : `[Family Alert]: ${m.name} (${m.relation}) is in this incident area.`
+                            )
+                            toast.info(`Appended ${m.name} to incident notes`)
+                          }
+                        }}
+                      />
+                      <span className="truncate">
+                        <strong>{m.name}</strong> ({m.relation})
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardBody>
         </Card>
 
@@ -467,32 +557,64 @@ function ReportForm() {
             <h2 className="font-semibold text-[#101b2d] text-base">4. Evidence / Photos (Optional)</h2>
           </CardHeader>
           <CardBody>
-            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-slate-300 transition-colors">
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center hover:border-slate-300 transition-colors">
               <Upload size={24} className="text-slate-400 mx-auto mb-2" />
               <label htmlFor="evidence-upload" className="cursor-pointer">
-                <span className="text-sm font-medium text-blue-600 hover:underline">
-                  Upload photos or videos
+                <span className="text-sm font-semibold text-blue-600 hover:underline">
+                  Click to choose photos
                 </span>
                 <input
                   id="evidence-upload"
                   type="file"
                   multiple
-                  accept="image/*,video/*"
+                  accept="image/*"
                   onChange={handleFileChange}
                   className="sr-only"
                 />
               </label>
-              <p className="text-xs text-slate-400 mt-1">PNG, JPG, MP4 up to 10MB each (max 4 files)</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Images are processed locally and attached directly to your report (max 4 photos)
+              </p>
             </div>
-            {files.length > 0 && (
-              <ul className="mt-3 space-y-1">
-                {files.map((f, i) => (
-                  <li key={i} className="text-xs text-slate-600 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    {f.name} ({(f.size / 1024).toFixed(0)} KB)
-                  </li>
-                ))}
-              </ul>
+
+            {/* Thumbnail previews */}
+            {filePreviews.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1.5">
+                  <ImageIcon size={14} className="text-blue-600" /> Attached Photos ({filePreviews.length}/4)
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {filePreviews.map((p, i) => (
+                    <div
+                      key={i}
+                      className="relative group rounded-lg overflow-hidden border border-slate-200 bg-slate-50 aspect-video"
+                    >
+                      {p.dataUrl ? (
+                        <img
+                          src={p.dataUrl}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">
+                          {p.name}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(i)}
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-600/90 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xs shadow transition-colors"
+                        title="Remove photo"
+                      >
+                        <X size={12} />
+                      </button>
+                      <div className="absolute bottom-0 inset-x-0 bg-black/60 px-1.5 py-0.5 text-[10px] text-white truncate">
+                        {p.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </CardBody>
         </Card>

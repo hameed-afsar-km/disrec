@@ -22,7 +22,7 @@ export function Footer() {
               <div className="w-8 h-8 bg-[#e53945] rounded-lg flex items-center justify-center">
                 <Radio size={16} className="text-white" />
               </div>
-              RespondAI
+              Dis<span className="bg-gradient-to-r from-[#e53945] to-orange-500 bg-clip-text text-transparent">rec</span>
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed">
               AI-powered Emergency Response & Disaster Management Platform. When every second matters.
@@ -98,7 +98,7 @@ export function Footer() {
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-slate-500">
-            © {currentYear} RespondAI. Built for emergency coordination and disaster management.
+            © {currentYear} Disrec. Built for emergency coordination and disaster management.
           </p>
           <p className="text-xs text-slate-500">
             For life-threatening emergencies, always call your{' '}

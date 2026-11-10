@@ -69,10 +69,16 @@ const NAV_SECTIONS: NavSection[] = [
 interface AdminSidebarProps {
   open: boolean
   onClose: () => void
+  collapsed?: boolean
   unreadCount?: number
 }
 
-export function AdminSidebar({ open, onClose, unreadCount = 0 }: AdminSidebarProps) {
+export function AdminSidebar({
+  open,
+  onClose,
+  collapsed = false,
+  unreadCount = 0,
+}: AdminSidebarProps) {
   const pathname = usePathname()
   const { signOut, appUser } = useAuth()
 
@@ -95,19 +101,20 @@ export function AdminSidebar({ open, onClose, unreadCount = 0 }: AdminSidebarPro
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-[240px] bg-[#101b2d] flex flex-col transition-transform duration-300 ease-in-out',
+          'fixed top-0 left-0 z-40 h-full w-[240px] bg-[#101b2d] flex flex-col transition-all duration-300 ease-in-out',
           'md:translate-x-0',
+          collapsed ? 'admin-sidebar-collapsed md:w-[76px]' : 'md:w-[240px]',
           open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between px-4 h-16 border-b border-white/10 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="admin-sidebar-header flex items-center justify-between px-4 h-16 border-b border-white/10 shrink-0">
+          <div className="admin-sidebar-brand flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
               <Radio size={16} className="text-white" />
             </div>
-            <div>
-              <span className="text-white font-bold text-sm leading-none">RespondAI</span>
+            <div className="admin-sidebar-brand-text">
+              <span className="text-white font-bold text-sm leading-none">Dis<span className="bg-gradient-to-r from-[#e53945] to-orange-400 bg-clip-text text-transparent">rec</span></span>
               <div className="mt-0.5">
                 <span className="text-[10px] font-semibold bg-blue-500/30 text-blue-300 px-1.5 py-0.5 rounded uppercase tracking-wide">
                   Admin
@@ -129,7 +136,7 @@ export function AdminSidebar({ open, onClose, unreadCount = 0 }: AdminSidebarPro
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
           {NAV_SECTIONS.map((section) => (
             <div key={section.section}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 px-3 mb-1.5">
+              <p className="admin-sidebar-section-label text-[10px] font-semibold uppercase tracking-widest text-slate-500 px-3 mb-1.5">
                 {section.section}
               </p>
               <ul className="space-y-0.5">
@@ -139,9 +146,10 @@ export function AdminSidebar({ open, onClose, unreadCount = 0 }: AdminSidebarPro
                       href={item.href}
                       className={cn('admin-sidebar-link', isActive(item.href) && 'active')}
                       onClick={onClose}
+                      title={item.label}
                     >
                       <span className="shrink-0">{item.icon}</span>
-                      <span>{item.label}</span>
+                      <span className="admin-sidebar-label">{item.label}</span>
                     </Link>
                   </li>
                 ))}
@@ -157,24 +165,25 @@ export function AdminSidebar({ open, onClose, unreadCount = 0 }: AdminSidebarPro
             href="/admin/notifications"
             className={cn('admin-sidebar-link', isActive('/admin/notifications') && 'active')}
             onClick={onClose}
+            title="Notifications"
           >
             <Bell size={16} className="shrink-0" />
-            <span className="flex-1">Notifications</span>
+            <span className="admin-sidebar-label flex-1">Notifications</span>
             {unreadCount > 0 && (
-              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+              <span className="admin-sidebar-badge bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </Link>
 
           {/* User + sign out */}
-          <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+          <div className="admin-sidebar-user flex items-center gap-2 px-3 pt-2 pb-1">
             <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
               <span className="text-white text-xs font-semibold">
                 {appUser?.name?.[0]?.toUpperCase() ?? 'A'}
               </span>
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="admin-sidebar-user-meta flex-1 min-w-0">
               <p className="text-xs font-medium text-white truncate">{appUser?.name ?? 'Admin'}</p>
               <p className="text-[10px] text-slate-500 truncate capitalize">{appUser?.role ?? 'admin'}</p>
             </div>

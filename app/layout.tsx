@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/components/auth/AuthProvider'
+import { SplashScreen } from '@/components/ui/splash-screen'
 import './globals.css'
 
 const geistSans = Geist({
@@ -18,8 +19,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'RespondAI — Emergency Response Platform',
-    template: '%s | RespondAI',
+    default: 'Disrec — Emergency Response Platform',
+    template: '%s | Disrec',
   },
   description:
     'AI-powered Emergency Response & Disaster Management Platform. Report emergencies, request SOS assistance, monitor live incidents, and receive real-time alerts.',
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full`}>
       <body className="min-h-full flex flex-col antialiased">
         <AuthProvider>
+          <SplashScreen />
           {children}
           <Toaster
             position="top-right"

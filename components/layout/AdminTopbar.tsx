@@ -4,7 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, Bell, LogOut, ChevronDown, User } from 'lucide-react'
+import { Menu, Bell, LogOut, ChevronDown, User, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { cn } from '@/lib/utils'
 
@@ -34,10 +34,17 @@ function deriveTitle(pathname: string): string {
 
 interface AdminTopbarProps {
   onToggle: () => void
+  onToggleCollapse: () => void
+  collapsed: boolean
   unreadCount?: number
 }
 
-export function AdminTopbar({ onToggle, unreadCount = 0 }: AdminTopbarProps) {
+export function AdminTopbar({
+  onToggle,
+  onToggleCollapse,
+  collapsed,
+  unreadCount = 0,
+}: AdminTopbarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { appUser, signOut } = useAuth()
@@ -72,6 +79,16 @@ export function AdminTopbar({ onToggle, unreadCount = 0 }: AdminTopbarProps) {
         aria-label="Toggle sidebar"
       >
         <Menu size={20} />
+      </button>
+
+      {/* Collapse / expand — desktop only */}
+      <button
+        className="hidden md:inline-flex p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+        onClick={onToggleCollapse}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
       </button>
 
       {/* Page title */}

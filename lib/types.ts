@@ -48,6 +48,17 @@ export interface AppUser {
   photoURL?: string
   role: UserRole
   preferredLanguage: string
+  aadhaarNumber?: string
+  familyMembers?: {
+    id: string
+    name: string
+    relation: string
+    age: number
+    aadhaarLast4: string
+    status: 'Safe' | 'Affected' | 'Unknown'
+    phone?: string
+    lastKnownLocation?: string
+  }[]
   emergencyContacts: EmergencyContact[]
   notificationPreferences: {
     email: boolean

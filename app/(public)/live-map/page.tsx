@@ -10,11 +10,13 @@ import {
   MapPin, Filter, Layers, Navigation, RefreshCw, Flame,
   AlertTriangle, Shield, CheckCircle
 } from 'lucide-react'
+import { useAuth } from '@/components/auth/AuthProvider'
 import { subscribeToAllIncidents } from '@/lib/firestore'
 import type { Incident, EmergencyCategory, Severity } from '@/lib/types'
 import { CATEGORY_LABELS, SEVERITY_LABELS } from '@/lib/types'
 
 export default function LiveMapPage() {
+  const { firebaseUser } = useAuth()
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -29,20 +31,26 @@ export default function LiveMapPage() {
   const [zoom, setZoom] = useState(5)
 
   useEffect(() => {
-    const unsub = subscribeToAllIncidents((data) => {
-      setIncidents(data)
-      setLoading(false)
+    if (!firebaseUser) return
 
-      // If user has incidents with coordinates, auto-center on the newest
-      const withCoords = data.filter((i) => i.latitude && i.longitude)
-      if (withCoords.length > 0) {
-        setCenter([withCoords[0].latitude, withCoords[0].longitude])
-        setZoom(10)
-      }
-    })
+    const unsub = subscribeToAllIncidents(
+      (data) => {
+        setIncidents(data)
+        setLoading(false)
+
+        // If user has incidents with coordinates, auto-center on the newest
+        const withCoords = data.filter((i) => i.latitude && i.longitude)
+        if (withCoords.length > 0) {
+          setCenter([withCoords[0].latitude, withCoords[0].longitude])
+          setZoom(10)
+        }
+      },
+      [],
+      (err) => console.warn('Unable to load live incidents:', err.code, err.message)
+    )
 
     return () => unsub()
-  }, [])
+  }, [firebaseUser])
 
   function locateMe() {
     if (navigator.geolocation) {

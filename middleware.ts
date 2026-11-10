@@ -13,6 +13,7 @@ const PROTECTED_USER_ROUTES = [
   '/notifications',
   '/profile',
   '/nearby-alerts',
+  '/live-map',
 ]
 
 // Routes that require admin role

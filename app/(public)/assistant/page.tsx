@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
+import { Markdown } from '@/components/ui/Markdown'
 import {
   Send, Sparkles, AlertTriangle,
   RotateCcw, Bot, User, Globe
@@ -256,13 +257,13 @@ export default function AssistantPage() {
             )}
 
             <div
-              className={`max-w-[85%] sm:max-w-[75%] p-4 text-sm leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-[85%] min-w-0 break-words p-4 text-sm leading-relaxed sm:max-w-[75%] ${
                 m.role === 'user'
                   ? 'chat-bubble-user text-white'
                   : 'chat-bubble-ai bg-white shadow-sm'
               }`}
             >
-              {m.content}
+              <Markdown content={m.content} inverted={m.role === 'user'} className="text-sm" />
             </div>
 
             {m.role === 'user' && (

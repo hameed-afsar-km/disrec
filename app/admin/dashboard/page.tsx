@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card, CardHeader, CardBody, StatCard } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { SeverityBadge, StatusBadge, SOSStatusBadge } from '@/components/ui/Badge'
+import { Markdown } from '@/components/ui/Markdown'
 import {
   AlertTriangle, FileText, AlertOctagon, CheckCircle,
   Clock, Sparkles, Brain, ArrowRight, MapPin, ChevronRight
@@ -73,9 +74,10 @@ export default function AdminDashboardPage() {
 
   // Real-time metric computations
   const total = incidents.length
-  const active = incidents.filter((i) => i.status !== 'resolved').length
-  const critical = incidents.filter((i) => i.severity === 'critical' && i.status !== 'resolved').length
+  const critical = incidents.filter((i) => i.severity === 'critical').length
+  const pending = incidents.filter((i) => i.status === 'pending' || i.status === 'reported').length
   const resolved = incidents.filter((i) => i.status === 'resolved').length
+  const inProgress = incidents.filter((i) => i.status === 'in_progress').length
   const activeSOS = sosList.filter((s) => s.status === 'active' || s.status === 'acknowledged').length
 
   // Category chart dataset
@@ -122,7 +124,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* KPI Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Incidents"
           value={total}
@@ -130,25 +132,19 @@ export default function AdminDashboardPage() {
           color="slate"
         />
         <StatCard
-          label="Active Incidents"
-          value={active}
-          icon={<AlertTriangle size={20} />}
-          color={active > 0 ? 'orange' : 'slate'}
-        />
-        <StatCard
-          label="Critical Triage"
+          label="Critical Incidents"
           value={critical}
           icon={<AlertOctagon size={20} />}
           color={critical > 0 ? 'red' : 'slate'}
         />
         <StatCard
-          label="Active SOS Signals"
-          value={activeSOS}
-          icon={<AlertTriangle size={20} />}
-          color={activeSOS > 0 ? 'red' : 'slate'}
+          label="Pending Incidents"
+          value={pending}
+          icon={<Clock size={20} />}
+          color={pending > 0 ? 'orange' : 'slate'}
         />
         <StatCard
-          label="Resolved Today"
+          label="Resolved Incidents"
           value={resolved}
           icon={<CheckCircle size={20} />}
           color="green"
@@ -168,9 +164,7 @@ export default function AdminDashboardPage() {
             </span>
           </CardHeader>
           <CardBody>
-            <div className="text-xs sm:text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
-              {aiSummary}
-            </div>
+            <Markdown content={aiSummary} className="text-xs sm:text-sm" />
           </CardBody>
         </Card>
       )}

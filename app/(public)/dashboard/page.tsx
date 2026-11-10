@@ -12,11 +12,14 @@ import { SkeletonCard } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import {
   AlertTriangle, Radio, MapPin, Bell, Shield, ArrowRight,
-  Clock, Navigation, CheckCircle, FileText, ChevronRight
+  Clock, Navigation, CheckCircle, FileText, ChevronRight,
+  Users, Fingerprint, Phone, HeartPulse, AlertCircle
 } from 'lucide-react'
 import { getUserIncidents, subscribeToUserNotifications } from '@/lib/firestore'
 import { timeAgo, categoryIcons } from '@/lib/utils'
+import { updateFamilyMemberStatus } from '@/lib/mock-auth'
 import type { Incident, Notification } from '@/lib/types'
+import { toast } from 'sonner'
 import { CATEGORY_LABELS } from '@/lib/types'
 
 export default function UserDashboard() {
@@ -119,6 +122,140 @@ export default function UserDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Aadhaar Family Safety Status Card */}
+      {appUser?.aadhaarNumber && (
+        <Card className="border-blue-300 bg-gradient-to-r from-blue-50/70 to-indigo-50/50 shadow-sm overflow-hidden">
+          <CardHeader className="bg-white/80 border-b border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-blue-600 text-white rounded-xl shadow-sm">
+                <Fingerprint size={20} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-bold text-base text-[#101b2d]">Aadhaar Family Safety Registry</h2>
+                  <span className="text-[10px] font-mono font-bold bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                    Aadhaar Linked
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Primary Card: <strong className="font-mono text-slate-700">•••• •••• {appUser.aadhaarNumber.slice(-4)}</strong> • Disaster Tracking & Evacuation Verification
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 font-medium">
+                {appUser.familyMembers?.filter((m) => m.status === 'Safe').length || 0} / {appUser.familyMembers?.length || 0} Reported Safe
+              </span>
+            </div>
+          </CardHeader>
+
+          <CardBody className="p-5">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider px-1">
+                <span>Family Member</span>
+                <span>Safety Triage</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {appUser.familyMembers?.map((member) => {
+                  const statusColors = {
+                    Safe: 'bg-green-100 text-green-800 border-green-300',
+                    Affected: 'bg-red-100 text-red-800 border-red-300',
+                    Unknown: 'bg-amber-100 text-amber-800 border-amber-300',
+                  }
+
+                  return (
+                    <div
+                      key={member.id}
+                      className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs flex flex-col justify-between space-y-3"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="font-bold text-sm text-[#101b2d]">{member.name}</h3>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                              statusColors[member.status as 'Safe' | 'Affected' | 'Unknown'] || statusColors.Safe
+                            }`}
+                          >
+                            ● {member.status}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-500">
+                          {member.relation} • Age {member.age} • UID: <span className="font-mono">•••• {member.aadhaarLast4}</span>
+                        </p>
+
+                        {member.lastKnownLocation && (
+                          <p className="text-[11px] text-slate-600 flex items-center gap-1 mt-1 truncate">
+                            <MapPin size={11} className="text-slate-400 shrink-0" />
+                            {member.lastKnownLocation}
+                          </p>
+                        )}
+
+                        {member.phone && (
+                          <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1">
+                            <Phone size={11} className="text-slate-400 shrink-0" />
+                            {member.phone}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Quick Status Toggle Buttons */}
+                      <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5">
+                        <span className="text-[10px] font-medium text-slate-400">Mark:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateFamilyMemberStatus(member.id, 'Safe')
+                            toast.success(`${member.name} marked as Safe`)
+                          }}
+                          className={`text-[10px] px-2 py-1 rounded font-semibold transition-colors ${
+                            member.status === 'Safe'
+                              ? 'bg-green-600 text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-green-100 hover:text-green-800'
+                          }`}
+                        >
+                          Safe
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateFamilyMemberStatus(member.id, 'Affected')
+                            toast.warning(`${member.name} marked as Needing Assistance`)
+                          }}
+                          className={`text-[10px] px-2 py-1 rounded font-semibold transition-colors ${
+                            member.status === 'Affected'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-red-100 hover:text-red-800'
+                          }`}
+                        >
+                          Affected
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateFamilyMemberStatus(member.id, 'Unknown')
+                            toast.info(`${member.name} marked as Unknown`)
+                          }}
+                          className={`text-[10px] px-2 py-1 rounded font-semibold transition-colors ${
+                            member.status === 'Unknown'
+                              ? 'bg-amber-600 text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800'
+                          }`}
+                        >
+                          Unknown
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

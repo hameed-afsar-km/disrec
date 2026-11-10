@@ -6,12 +6,22 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
 import { AdminTopbar } from '@/components/layout/AdminTopbar'
-import { SkeletonCard } from '@/components/ui/Skeleton'
+import { cn } from '@/lib/utils'
+
+const SIDEBAR_STORAGE_KEY = 'disrec-admin-sidebar-collapsed'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { firebaseUser, appUser, isAdmin, loading } = useAuth()
+  const { firebaseUser, isAdmin, loading } = useAuth()
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true'
+  })
+
+  useEffect(() => {
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarCollapsed))
+  }, [sidebarCollapsed])
 
   useEffect(() => {
     if (!loading) {
@@ -42,11 +52,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AdminSidebar
         open={mobileSidebarOpen}
         onClose={() => setMobileSidebarOpen(false)}
+        collapsed={sidebarCollapsed}
       />
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col md:ml-[240px] min-w-0">
-        <AdminTopbar onToggle={() => setMobileSidebarOpen((v) => !v)} />
+      <div
+        className={cn(
+          'flex-1 flex flex-col min-w-0 transition-[margin] duration-300 ease-in-out',
+          sidebarCollapsed ? 'md:ml-[76px]' : 'md:ml-[240px]'
+        )}
+      >
+        <AdminTopbar
+          onToggle={() => setMobileSidebarOpen((v) => !v)}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+        />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
           {children}
         </main>

@@ -59,6 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone: mock.phone,
         role: mock.role,
         preferredLanguage: 'en',
+        aadhaarNumber: mock.aadhaarNumber,
+        familyMembers: mock.familyMembers,
         emergencyContacts: [],
         notificationPreferences: {
           email: true,

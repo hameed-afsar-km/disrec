@@ -12,12 +12,14 @@ import {
   Bell, Navigation, MapPin, AlertTriangle, Shield,
   Radio, RefreshCw, ArrowRight
 } from 'lucide-react'
+import { useAuth } from '@/components/auth/AuthProvider'
 import { subscribeToAllIncidents, subscribeToActiveAlerts } from '@/lib/firestore'
 import { distanceKm, timeAgo, categoryIcons } from '@/lib/utils'
 import type { Incident, EmergencyAlert } from '@/lib/types'
 import { CATEGORY_LABELS } from '@/lib/types'
 
 export default function NearbyAlertsPage() {
+  const { firebaseUser } = useAuth()
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'detecting' | 'granted' | 'denied'>('idle')
   const [radiusKm, setRadiusKm] = useState<number>(25)
@@ -28,21 +30,32 @@ export default function NearbyAlertsPage() {
 
   useEffect(() => {
     detectLocation()
+  }, [])
 
-    const unsubInc = subscribeToAllIncidents((data) => {
-      setIncidents(data)
-      setLoading(false)
-    })
+  useEffect(() => {
+    if (!firebaseUser) return
 
-    const unsubAlerts = subscribeToActiveAlerts((data) => {
-      setBroadcasts(data)
-    })
+    const unsubInc = subscribeToAllIncidents(
+      (data) => {
+        setIncidents(data)
+        setLoading(false)
+      },
+      [],
+      (err) => console.warn('Unable to load nearby incidents:', err.code, err.message)
+    )
+
+    const unsubAlerts = subscribeToActiveAlerts(
+      (data) => {
+        setBroadcasts(data)
+      },
+      (err) => console.warn('Unable to load emergency alerts:', err.code, err.message)
+    )
 
     return () => {
       unsubInc()
       unsubAlerts()
     }
-  }, [])
+  }, [firebaseUser])
 
   function detectLocation() {
     if (!navigator.geolocation) {

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Markdown } from '@/components/ui/Markdown'
 import {
   Brain, Sparkles, TrendingUp, AlertTriangle, Layers,
   RefreshCw, CheckCircle2, ShieldAlert, Cpu
@@ -162,9 +163,7 @@ export default function AdminAiIntelligencePage() {
               </p>
             </div>
           ) : analysisOutput ? (
-            <div className="prose prose-sm max-w-none text-slate-800 text-xs sm:text-sm whitespace-pre-wrap leading-relaxed space-y-2">
-              {analysisOutput}
-            </div>
+            <Markdown content={analysisOutput} className="text-xs sm:text-sm" />
           ) : (
             <div className="py-16 text-center text-slate-400 text-xs">
               Select one of the analytical models above to evaluate current incident telemetry.
