@@ -18,6 +18,7 @@ import {
   Radio,
   LogOut,
   ChevronDown,
+  Navigation,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,6 +27,7 @@ const NAV_LINKS = [
   { href: '/nearby-alerts', label: 'Alerts', icon: Bell },
   { href: '/assistant', label: 'AI Assistant', icon: MessageSquare },
   { href: '/safety', label: 'Safety', icon: Shield },
+  { href: '/evacuation', label: 'Shelters', icon: Navigation },
 ]
 
 export function Navbar() {

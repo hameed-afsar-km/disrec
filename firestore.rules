@@ -129,6 +129,17 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
+    // SHELTER POINTS
+    // -------------------------------------------------------------------------
+    match /shelters/{shelterId} {
+      // Citizens use these locations to find a safe evacuation destination.
+      allow read: if isAuthenticated();
+
+      // Only administrators can publish capacity and operational status.
+      allow create, update, delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
     // ADMIN AUDIT LOGS
     // -------------------------------------------------------------------------
     match /admin_audit_logs/{logId} {

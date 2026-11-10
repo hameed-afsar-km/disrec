@@ -1,5 +1,7 @@
 import type { Incident, Shelter } from './types'
 import { distanceKm } from './utils'
+import { collection, deleteDoc, doc, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore'
+import { auth, db } from './firebase'
 
 export const LOCAL_SHELTERS_KEY = 'respondai:evacuation_shelters'
 
@@ -33,16 +35,55 @@ export function subscribeToShelters(callback: (shelters: Shelter[]) => void) {
   callback(getLocalShelters())
   const handler = (event: Event) => callback((event as CustomEvent<Shelter[]>).detail || getLocalShelters())
   window.addEventListener('respondai:shelters_updated', handler)
-  return () => window.removeEventListener('respondai:shelters_updated', handler)
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === LOCAL_SHELTERS_KEY) callback(getLocalShelters())
+  }
+  window.addEventListener('storage', handleStorage)
+
+  let unsubscribeCloud: (() => void) | undefined
+  if (auth.currentUser) {
+    try {
+      unsubscribeCloud = onSnapshot(
+        query(collection(db, 'shelters'), orderBy('updatedAt', 'desc')),
+        (snapshot) => {
+          const cloudShelters = snapshot.docs.map((item) => item.data() as Shelter)
+          const sheltersById = new Map(getLocalShelters().map((item) => [item.shelterId, item]))
+          cloudShelters.forEach((item) => sheltersById.set(item.shelterId, item))
+          callback(Array.from(sheltersById.values()))
+        }
+      )
+    } catch {
+      // The local directory remains available if the device is offline.
+    }
+  }
+
+  return () => {
+    window.removeEventListener('respondai:shelters_updated', handler)
+    window.removeEventListener('storage', handleStorage)
+    unsubscribeCloud?.()
+  }
 }
 
-export function saveShelter(shelter: Shelter) {
+export async function saveShelter(shelter: Shelter) {
   const shelters = getLocalShelters()
   saveLocalShelters([shelter, ...shelters.filter((item) => item.shelterId !== shelter.shelterId)])
+  if (!auth.currentUser) return shelter.shelterId
+  try {
+    await setDoc(doc(db, 'shelters', shelter.shelterId), shelter)
+  } catch {
+    // Save locally first so emergency operations can continue during an outage.
+  }
+  return shelter.shelterId
 }
 
-export function deleteShelter(shelterId: string) {
+export async function deleteShelter(shelterId: string) {
   saveLocalShelters(getLocalShelters().filter((shelter) => shelter.shelterId !== shelterId))
+  if (!auth.currentUser) return
+  try {
+    await deleteDoc(doc(db, 'shelters', shelterId))
+  } catch {
+    // The local removal is retained and will be reconciled when cloud access returns.
+  }
 }
 
 const hazardRadiusKm: Record<Incident['severity'], number> = { critical: 5, high: 3, medium: 1.5, low: 0.8 }

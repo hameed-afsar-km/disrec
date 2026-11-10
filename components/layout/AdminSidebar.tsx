@@ -19,6 +19,7 @@ import {
   LogOut,
   X,
   Truck,
+  House,
 } from 'lucide-react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { cn } from '@/lib/utils'
@@ -49,6 +50,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'SOS Management', href: '/admin/sos', icon: <AlertOctagon size={16} /> },
       { label: 'Alerts', href: '/admin/alerts', icon: <Radio size={16} /> },
       { label: 'Heatmap', href: '/admin/heatmap', icon: <Map size={16} /> },
+      { label: 'Shelter Points', href: '/admin/shelters', icon: <House size={16} /> },
     ],
   },
   {
