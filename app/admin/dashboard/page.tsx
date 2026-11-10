@@ -17,6 +17,7 @@ import { timeAgo, categoryIcons } from '@/lib/utils'
 import type { Incident, SOSRequest } from '@/lib/types'
 import { CATEGORY_LABELS, SEVERITY_LABELS } from '@/lib/types'
 import { IncidentAiChat } from '@/components/admin/IncidentAiChat'
+import { EmergencyMapContainer } from '@/components/map/MapContainer'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -127,6 +128,55 @@ export default function AdminDashboardPage() {
         >
           <Brain size={16} /> Generate AI Situation Briefing
         </Button>
+      </div>
+
+      {/* Command-first heatmap workspace */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <Card className="xl:col-span-2 overflow-hidden border-slate-300 shadow-xl shadow-slate-950/10">
+          <CardHeader className="border-none bg-slate-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-300">Command visualization</p>
+              <h2 className="mt-1 flex items-center gap-2 text-base font-bold"><MapPin size={17} className="text-red-400" /> Active incident heatmap</h2>
+            </div>
+            <Link href="/admin/heatmap" className="inline-flex items-center gap-1 text-xs font-bold text-cyan-200 hover:text-white">
+              Open full heatmap <ExternalLink size={12} />
+            </Link>
+          </CardHeader>
+          <CardBody className="p-0">
+            <div className="h-[420px]">
+              <EmergencyMapContainer
+                incidents={incidents.filter((incident) => incident.status !== 'resolved')}
+                center={incidents[0]?.latitude ? [incidents[0].latitude, incidents[0].longitude] : [20.5937, 78.9629]}
+                zoom={incidents.length ? 7 : 5}
+                showHeatmap
+              />
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card className="border-red-200 bg-gradient-to-br from-white via-red-50/70 to-orange-50/80">
+          <CardBody className="p-5 h-full flex flex-col">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-red-700">Priority signals</span>
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
+            </div>
+            <div className="mt-5 space-y-3">
+              <div className="rounded-xl bg-slate-950 p-4 text-white">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Critical clusters</p>
+                <p className="mt-1 text-3xl font-black">{critical}</p>
+                <p className="mt-1 text-xs text-slate-300">Require immediate dispatch review</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-orange-200 bg-white/80 p-3"><p className="text-xl font-black text-orange-600">{pending}</p><p className="text-[10px] font-bold uppercase text-slate-500">Awaiting triage</p></div>
+                <div className="rounded-xl border border-red-200 bg-white/80 p-3"><p className="text-xl font-black text-red-600">{activeSOS}</p><p className="text-[10px] font-bold uppercase text-slate-500">Active SOS</p></div>
+              </div>
+            </div>
+            <div className="mt-auto pt-5 space-y-2">
+              <Link href="/admin/incidents"><Button variant="primary" size="sm" className="w-full">Open dispatch queue <ArrowRight size={14} /></Button></Link>
+              <Link href="/admin/heatmap" className="block text-center text-xs font-semibold text-slate-600 hover:text-blue-700">Adjust heatmap filters</Link>
+            </div>
+          </CardBody>
+        </Card>
       </div>
 
       {/* KPI Metric Cards */}

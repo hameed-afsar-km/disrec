@@ -371,7 +371,7 @@ export function VoiceQuickReportModal({
       }}
       title="Voice AI Emergency Reporter"
       size="xl"
-      className="max-h-[92vh] flex flex-col p-0 overflow-hidden"
+      className="!max-w-5xl max-h-[92vh] flex flex-col p-0 overflow-hidden"
     >
       {/* Top Header Toolbar */}
       <div className="bg-slate-900 text-white p-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-800">
@@ -431,10 +431,10 @@ export function VoiceQuickReportModal({
       </div>
 
       {/* Main Body Split: Left Conversational Feed, Right Live Extraction Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden min-h-[460px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-y-auto lg:overflow-hidden lg:min-h-[460px]">
         
         {/* Left Column (Conversational Dialogue & Mic) */}
-        <div className="lg:col-span-7 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 bg-slate-50/50 p-4">
+        <div className="lg:col-span-7 min-w-0 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200 bg-slate-50/50 p-4">
           
           {/* Chat Bubble Stream */}
           <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[340px] sm:max-h-[380px]">
@@ -516,7 +516,7 @@ export function VoiceQuickReportModal({
                 e.preventDefault()
                 handleSendMessage()
               }}
-              className="flex items-center gap-2"
+              className="flex min-w-0 items-center gap-2"
             >
               <Button
                 type="button"
@@ -539,7 +539,7 @@ export function VoiceQuickReportModal({
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder={`Speak or type in ${getLanguageName(selectedLang)}...`}
-                className="flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="min-w-0 flex-1 px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 disabled={isProcessing}
               />
 
@@ -557,7 +557,7 @@ export function VoiceQuickReportModal({
         </div>
 
         {/* Right Column: Dynamic Live Incident Preview Card */}
-        <div className="lg:col-span-5 p-4 flex flex-col justify-between bg-white overflow-y-auto max-h-[460px]">
+        <div className="lg:col-span-5 min-w-0 p-4 flex flex-col justify-between bg-white overflow-visible lg:overflow-y-auto lg:max-h-[460px]">
           <div>
             <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -676,7 +676,7 @@ export function VoiceQuickReportModal({
               size="md"
               onClick={handleSubmitReport}
               disabled={isSubmitting || !extracted}
-              className="w-full font-bold shadow-lg shadow-red-600/20 text-xs sm:text-sm py-2.5 flex items-center justify-center gap-2"
+              className="w-full min-h-10 h-auto whitespace-normal py-2.5 font-bold text-center text-xs sm:text-sm shadow-lg shadow-red-600/20"
             >
               {isSubmitting ? (
                 <>

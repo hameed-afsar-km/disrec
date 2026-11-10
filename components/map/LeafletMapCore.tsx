@@ -9,12 +9,15 @@ import type { Incident, Severity } from '@/lib/types'
 import { CATEGORY_LABELS } from '@/lib/types'
 import { SeverityBadge, StatusBadge } from '@/components/ui/Badge'
 import Link from 'next/link'
+import type { FamilyMapMember } from './MapContainer'
 
 interface LeafletCoreProps {
   incidents: Incident[]
   center: [number, number]
   zoom: number
   showHeatmap?: boolean
+  familyMembers?: FamilyMapMember[]
+  focusedFamilyId?: string | null
 }
 
 // Custom Leaflet DivIcon factory for severity-based pulsing map markers
@@ -82,6 +85,17 @@ const userIcon = L.divIcon({
   iconAnchor: [10, 10],
 })
 
+function createFamilyMarker(status: FamilyMapMember['status'], isFocused: boolean) {
+  const color = status === 'Safe' ? '#16a34a' : status === 'Affected' ? '#e53945' : '#f59e0b'
+  return L.divIcon({
+    className: 'family-location-marker',
+    html: `<div style="width:${isFocused ? 36 : 28}px;height:${isFocused ? 36 : 28}px;display:flex;align-items:center;justify-content:center;background:${color};color:white;border:3px solid white;border-radius:12px;box-shadow:0 0 0 ${isFocused ? 5 : 0}px ${color}44,0 4px 12px rgba(15,23,42,.35);font-size:16px;transition:all .2s">⌖</div>`,
+    iconSize: isFocused ? [36, 36] : [28, 28],
+    iconAnchor: isFocused ? [18, 18] : [14, 14],
+    popupAnchor: [0, isFocused ? -18 : -14],
+  })
+}
+
 // Subcomponent to sync map view when center changes
 function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap()
@@ -96,6 +110,8 @@ export function LeafletMapCore({
   center,
   zoom,
   showHeatmap = false,
+  familyMembers = [],
+  focusedFamilyId = null,
 }: LeafletCoreProps) {
   // Filter incidents with valid coordinates
   const validIncidents = incidents.filter(
@@ -117,6 +133,10 @@ export function LeafletMapCore({
     natural_disaster: '🌪️',
     other: '⚠️',
   }
+
+  const locatedFamily = familyMembers.filter(
+    (member) => typeof member.latitude === 'number' && typeof member.longitude === 'number'
+  )
 
   return (
     <div className="w-full h-full min-h-[500px] relative rounded-xl overflow-hidden border border-slate-200 shadow-inner">
@@ -180,6 +200,26 @@ export function LeafletMapCore({
                 >
                   View Details
                 </Link>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* Aadhaar-linked family safety markers */}
+        {locatedFamily.map((member) => (
+          <Marker
+            key={`family-${member.id}`}
+            position={[member.latitude!, member.longitude!]}
+            icon={createFamilyMarker(member.status, member.id === focusedFamilyId)}
+          >
+            <Popup>
+              <div className="space-y-1 p-1 text-xs">
+                <p className="font-bold text-slate-900">{member.name}</p>
+                <p className="text-slate-500">{member.relation} · Aadhaar-linked family</p>
+                <p className="font-semibold" style={{ color: member.status === 'Safe' ? '#15803d' : member.status === 'Affected' ? '#c0252f' : '#b45309' }}>
+                  ● {member.status}
+                </p>
+                {member.lastKnownLocation && <p className="border-t border-slate-100 pt-1 text-slate-600">📍 {member.lastKnownLocation}</p>}
               </div>
             </Popup>
           </Marker>

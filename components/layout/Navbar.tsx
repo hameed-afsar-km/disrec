@@ -62,7 +62,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full px-3 pt-3 sm:px-6 sm:pt-4">
+    <header className="sticky top-0 z-40 w-full px-3 sm:px-6">
       <nav
         className={cn(
           'relative mx-auto flex h-14 max-w-6xl rounded-[1.75rem] border backdrop-blur-xl transition-all duration-300 sm:h-16',

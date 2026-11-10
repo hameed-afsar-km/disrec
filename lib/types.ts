@@ -87,6 +87,8 @@ export interface AppUser {
     status: 'Safe' | 'Affected' | 'Unknown'
     phone?: string
     lastKnownLocation?: string
+    latitude?: number
+    longitude?: number
   }[]
   emergencyContacts: EmergencyContact[]
   notificationPreferences: {

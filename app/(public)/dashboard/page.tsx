@@ -10,6 +10,7 @@ import { Card, CardHeader, CardBody, StatCard } from '@/components/ui/Card'
 import { SeverityBadge, StatusBadge } from '@/components/ui/Badge'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { EmergencyMapContainer } from '@/components/map/MapContainer'
 import {
   AlertTriangle, Radio, MapPin, Bell, Shield, ArrowRight,
   Clock, Navigation, CheckCircle, FileText, ChevronRight,
@@ -31,6 +32,7 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [locationStatus, setLocationStatus] = useState<'idle' | 'detecting' | 'granted' | 'denied'>('idle')
+  const [focusedFamilyId, setFocusedFamilyId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!authLoading && !firebaseUser) {
@@ -94,6 +96,18 @@ export default function UserDashboard() {
   const activeIncidents = incidents.filter((i) => i.status !== 'resolved')
   const resolvedIncidents = incidents.filter((i) => i.status === 'resolved')
   const unreadNotifs = notifications.filter((n) => !n.read)
+  const focusedFamily = appUser?.familyMembers?.find((member) => member.id === focusedFamilyId)
+  const familyMapCenter: [number, number] =
+    typeof focusedFamily?.latitude === 'number' && typeof focusedFamily.longitude === 'number'
+      ? [focusedFamily.latitude, focusedFamily.longitude]
+      : userLocation
+      ? [userLocation.lat, userLocation.lng]
+      : [28.582, 77.166]
+
+  function locateFamilyMember(memberId: string) {
+    setFocusedFamilyId(memberId)
+    document.getElementById('family-safety-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -122,6 +136,59 @@ export default function UserDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Primary situational awareness workspace */}
+      {appUser?.aadhaarNumber && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <Card id="family-safety-map" className="xl:col-span-2 overflow-hidden border-blue-200 shadow-lg shadow-blue-950/5">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950 text-white border-none">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">Live safety view</p>
+                <h2 className="mt-1 text-base font-bold flex items-center gap-2"><MapPin size={17} className="text-red-400" /> Family & incident map</h2>
+              </div>
+              <Link href="/live-map" className="text-xs font-semibold text-blue-200 hover:text-white inline-flex items-center gap-1">
+                Open operational map <ArrowRight size={13} />
+              </Link>
+            </CardHeader>
+            <CardBody className="p-0">
+              <div className="h-[360px]">
+                <EmergencyMapContainer
+                  incidents={incidents.filter((incident) => incident.status !== 'resolved')}
+                  familyMembers={appUser.familyMembers || []}
+                  center={familyMapCenter}
+                  zoom={focusedFamily || userLocation ? 15 : 13}
+                  showHeatmap
+                  focusedFamilyId={focusedFamilyId}
+                />
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="overflow-hidden border-indigo-200 bg-gradient-to-br from-white via-blue-50/80 to-indigo-100/70 shadow-lg shadow-indigo-950/5">
+            <CardBody className="p-5 h-full flex flex-col">
+              <div className="flex items-start justify-between gap-3">
+                <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/25"><Fingerprint size={20} /></div>
+                <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-800">AADHAAR LINKED</span>
+              </div>
+              <h2 className="mt-4 text-lg font-black text-slate-900">Family safety at a glance</h2>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">Every linked family member has a last-known location pin and a live safety status on the map.</p>
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                {(['Safe', 'Affected', 'Unknown'] as const).map((status) => (
+                  <div key={status} className="rounded-xl border border-white/80 bg-white/80 px-2 py-3 text-center shadow-sm">
+                    <p className="text-lg font-black text-slate-900">{appUser.familyMembers?.filter((member) => member.status === status).length || 0}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{status}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-auto pt-5">
+                <button type="button" onClick={requestLocation} className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-50 transition-colors">
+                  <Navigation size={14} className="mr-1.5 inline" /> {locationStatus === 'granted' ? 'Your GPS is active' : 'Add my live location'}
+                </button>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      )}
 
       {/* Aadhaar Family Safety Status Card */}
       {appUser?.aadhaarNumber && (
@@ -247,6 +314,19 @@ export default function UserDashboard() {
                         >
                           Unknown
                         </button>
+                        {typeof member.latitude === 'number' && typeof member.longitude === 'number' && (
+                          <button
+                            type="button"
+                            onClick={() => locateFamilyMember(member.id)}
+                            className={`ml-auto inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-semibold transition-colors ${
+                              focusedFamilyId === member.id
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                            }`}
+                          >
+                            <MapPin size={11} /> {focusedFamilyId === member.id ? 'Located' : 'Locate'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   )

@@ -12,6 +12,8 @@ export interface FamilyMember {
   status: 'Safe' | 'Affected' | 'Unknown'
   phone?: string
   lastKnownLocation?: string
+  latitude?: number
+  longitude?: number
 }
 
 export interface MockSession {
@@ -44,6 +46,8 @@ export const MOCK_USERS: Record<string, { pass: string; user: MockSession }> = {
           status: 'Safe',
           phone: '+91 98765 43211',
           lastKnownLocation: 'Home, Sector 14, Dwarka',
+          latitude: 28.5788,
+          longitude: 77.1655,
         },
         {
           id: 'fam-02',
@@ -54,6 +58,8 @@ export const MOCK_USERS: Record<string, { pass: string; user: MockSession }> = {
           status: 'Safe',
           phone: '+91 98765 43212',
           lastKnownLocation: 'Public School, Block C',
+          latitude: 28.5869,
+          longitude: 77.1712,
         },
         {
           id: 'fam-03',
@@ -64,6 +70,8 @@ export const MOCK_USERS: Record<string, { pass: string; user: MockSession }> = {
           status: 'Safe',
           phone: '+91 98765 43213',
           lastKnownLocation: 'Home, Sector 14, Dwarka',
+          latitude: 28.5798,
+          longitude: 77.1588,
         },
       ],
     },
@@ -100,6 +108,8 @@ export const SAMPLE_AADHAAR_USER: MockSession = {
       status: 'Safe',
       phone: '+91 98765 43211',
       lastKnownLocation: 'Home, Sector 14, Dwarka',
+      latitude: 28.5788,
+      longitude: 77.1655,
     },
     {
       id: 'fam-102',
@@ -110,6 +120,8 @@ export const SAMPLE_AADHAAR_USER: MockSession = {
       status: 'Safe',
       phone: '+91 98765 43212',
       lastKnownLocation: 'Public School, Block C',
+      latitude: 28.5869,
+      longitude: 77.1712,
     },
     {
       id: 'fam-103',
@@ -120,6 +132,8 @@ export const SAMPLE_AADHAAR_USER: MockSession = {
       status: 'Safe',
       phone: '+91 98765 43213',
       lastKnownLocation: 'Home, Sector 14, Dwarka',
+      latitude: 28.5798,
+      longitude: 77.1588,
     },
   ],
 }

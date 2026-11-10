@@ -1,17 +1,27 @@
 // components/map/MapContainer.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { Incident } from '@/lib/types'
-import { Card } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
+
+export interface FamilyMapMember {
+  id: string
+  name: string
+  relation: string
+  status: 'Safe' | 'Affected' | 'Unknown'
+  lastKnownLocation?: string
+  latitude?: number
+  longitude?: number
+}
 
 interface LiveMapProps {
   incidents: Incident[]
   center?: [number, number]
   zoom?: number
   showHeatmap?: boolean
+  familyMembers?: FamilyMapMember[]
+  focusedFamilyId?: string | null
 }
 
 // Leaflet and react-leaflet require window / DOM, so they MUST be dynamically imported with ssr: false
@@ -33,27 +43,17 @@ export function EmergencyMapContainer({
   center = [20.5937, 78.9629], // Default center (India)
   zoom = 5,
   showHeatmap = false,
+  familyMembers = [],
+  focusedFamilyId = null,
 }: LiveMapProps) {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) {
-    return (
-      <div className="w-full h-full min-h-[500px] bg-slate-100 flex items-center justify-center rounded-xl">
-        <p className="text-xs text-slate-400">Initializing Emergency Map...</p>
-      </div>
-    )
-  }
-
   return (
     <LeafletMap
       incidents={incidents}
       center={center}
       zoom={zoom}
       showHeatmap={showHeatmap}
+      familyMembers={familyMembers}
+      focusedFamilyId={focusedFamilyId}
     />
   )
 }

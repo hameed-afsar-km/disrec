@@ -5,6 +5,7 @@ import {
   collection,
   doc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   getDoc,
@@ -96,22 +97,22 @@ export async function updateUser(uid: string, data: Partial<AppUser>): Promise<v
 
 // ─── Incidents Local & Hybrid Store ──────────────────────────────────────────
 
-const LOCAL_INCIDENTS_KEY = 'respondai_local_incidents'
+const LOCAL_INCIDENTS_KEY = 'respondai_local_incidents_v2'
 
 const INITIAL_SEED_INCIDENTS: Incident[] = [
   {
-    incidentId: 'INC-CRIT-001',
+    incidentId: 'TN-CHN-001',
     reporterId: 'mock-user-citizen-001',
     reporterName: 'Demo Citizen User',
     reporterEmail: 'user@respondai.local',
-    title: 'Commercial Building Electrical Fire on 3rd Floor',
-    description: 'Dense smoke and open flames coming from the 3rd floor commercial office. Multiple people evacuating through emergency stairwells. Fire alarms active.',
+    title: 'Kitchen fire reported at a small restaurant',
+    description: 'Smoke was reported from the kitchen exhaust area. Staff have evacuated customers and used a fire extinguisher; the main supply has been switched off.',
     category: 'fire',
     severity: 'critical',
-    location: 'Connaught Place, Inner Circle, New Delhi',
-    latitude: 28.6315,
-    longitude: 77.2167,
-    peopleAffected: 25,
+    location: 'T. Nagar, Chennai, Tamil Nadu',
+    latitude: 13.0418,
+    longitude: 80.2341,
+    peopleAffected: 8,
     evidenceUrls: [],
     status: 'in_progress',
     verified: true,
@@ -119,56 +120,56 @@ const INITIAL_SEED_INCIDENTS: Incident[] = [
     updatedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
   },
   {
-    incidentId: 'INC-HIGH-002',
+    incidentId: 'TN-CHN-002',
     reporterId: 'mock-user-citizen-001',
     reporterName: 'Demo Citizen User',
     reporterEmail: 'user@respondai.local',
-    title: 'Multi-Vehicle Collision on Ring Road Flyover',
-    description: 'Collision involving two passenger cars and a mini delivery truck. Traffic stalled on both lanes. Emergency medical attention required for driver.',
+    title: 'Two-wheeler collision near the flyover',
+    description: 'A scooter and a hatchback collided during the evening commute. One rider is conscious but has a leg injury; traffic is moving slowly around the scene.',
     category: 'road_accident',
     severity: 'high',
-    location: 'Ring Road near AIIMS Flyover, New Delhi',
-    latitude: 28.5672,
-    longitude: 77.2100,
-    peopleAffected: 4,
+    location: 'Kathipara Junction, Chennai, Tamil Nadu',
+    latitude: 13.0067,
+    longitude: 80.2016,
+    peopleAffected: 2,
     evidenceUrls: [],
-    status: 'reported',
+    status: 'assigned',
     verified: true,
     createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
   },
   {
-    incidentId: 'INC-CRIT-003',
+    incidentId: 'TN-CBE-003',
     reporterId: 'mock-user-citizen-001',
     reporterName: 'Demo Citizen User',
     reporterEmail: 'user@respondai.local',
-    title: 'Cardiac Arrest on Metro Station Platform',
-    description: 'Elderly commuter collapsed near coach 4 platform. Station security currently administering CPR. Ambulance requested immediately.',
+    title: 'Elderly person collapsed at bus stand',
+    description: 'An elderly commuter became unresponsive while waiting for a bus. Bystanders have moved them to a shaded area and called for an ambulance.',
     category: 'medical',
     severity: 'critical',
-    location: 'Rajiv Chowk Metro Station Platform 2, New Delhi',
-    latitude: 28.6328,
-    longitude: 77.2195,
+    location: 'Gandhipuram Central Bus Stand, Coimbatore, Tamil Nadu',
+    latitude: 11.0168,
+    longitude: 76.9674,
     peopleAffected: 1,
     evidenceUrls: [],
     status: 'in_progress',
     verified: true,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 95 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
   },
   {
-    incidentId: 'INC-MED-004',
+    incidentId: 'TN-MDU-004',
     reporterId: 'mock-user-citizen-001',
     reporterName: 'Demo Citizen User',
     reporterEmail: 'user@respondai.local',
-    title: 'Severe Waterlogging and Flooding in Underpass',
-    description: 'Monsoon rainfall accumulation reaching 4 feet water level in underpass. Vehicles unable to cross, pedestrian movement completely halted.',
+    title: 'Waterlogging at railway underpass',
+    description: 'Heavy rain has collected in the underpass and stalled several two-wheelers. Pedestrians are being directed to use the nearby overbridge.',
     category: 'flood',
     severity: 'medium',
-    location: 'Minto Road Underpass, Connaught Place Outer, New Delhi',
-    latitude: 28.6375,
-    longitude: 77.2280,
-    peopleAffected: 12,
+    location: 'Goripalayam Underpass, Madurai, Tamil Nadu',
+    latitude: 9.9342,
+    longitude: 78.1375,
+    peopleAffected: 15,
     evidenceUrls: [],
     status: 'pending',
     verified: false,
@@ -176,18 +177,18 @@ const INITIAL_SEED_INCIDENTS: Incident[] = [
     updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
   },
   {
-    incidentId: 'INC-HIGH-005',
+    incidentId: 'TN-TRY-005',
     reporterId: 'mock-user-citizen-001',
     reporterName: 'Demo Citizen User',
     reporterEmail: 'user@respondai.local',
-    title: 'Partial Structural Collapse of Old Residential Balcony',
-    description: 'Portion of second-story masonry balcony collapsed onto street pavement. Area cordoned off; structural inspection needed to prevent further collapse.',
+    title: 'Loose façade debris near market street',
+    description: 'Small pieces of plaster have fallen from an older commercial building after rain. Shopkeepers have kept pedestrians away from the affected frontage.',
     category: 'building_collapse',
     severity: 'high',
-    location: 'Chandni Chowk Main Market Road, Old Delhi',
-    latitude: 28.6506,
-    longitude: 77.2303,
-    peopleAffected: 6,
+    location: 'Chathiram Bus Stand area, Tiruchirappalli, Tamil Nadu',
+    latitude: 10.8261,
+    longitude: 78.6922,
+    peopleAffected: 3,
     evidenceUrls: [],
     status: 'in_progress',
     verified: true,
@@ -195,23 +196,99 @@ const INITIAL_SEED_INCIDENTS: Incident[] = [
     updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
   },
   {
-    incidentId: 'INC-LOW-006',
+    incidentId: 'TN-SLM-006',
     reporterId: 'mock-user-citizen-001',
     reporterName: 'Demo Citizen User',
     reporterEmail: 'user@respondai.local',
-    title: 'Overhead Electrical Cable Sparking & Snapped',
-    description: 'Overhead transformer line sparking intermittently. Low-hanging cable poses safety hazard to passing high-body trucks. Power utility notified.',
+    title: 'Low-hanging cable reported near school gate',
+    description: 'A cable is hanging below normal height after overnight wind. The area has been marked off and the electricity board has been informed.',
     category: 'other',
     severity: 'low',
-    location: 'Sector 14 Main Road, Dwarka, New Delhi',
-    latitude: 28.5921,
-    longitude: 77.0378,
+    location: 'Five Roads, Salem, Tamil Nadu',
+    latitude: 11.6643,
+    longitude: 78.1460,
     peopleAffected: 0,
     evidenceUrls: [],
     status: 'resolved',
     verified: true,
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    incidentId: 'TN-TVL-007',
+    reporterId: 'mock-user-citizen-001',
+    reporterName: 'Demo Citizen User',
+    reporterEmail: 'user@respondai.local',
+    title: 'Fallen tree blocking residential lane',
+    description: 'A rain-weakened tree branch has blocked most of a narrow residential lane. No injuries reported, but cars cannot pass through safely.',
+    category: 'natural_disaster',
+    severity: 'medium',
+    location: 'Palayamkottai, Tirunelveli, Tamil Nadu',
+    latitude: 8.7139,
+    longitude: 77.7567,
+    peopleAffected: 10,
+    evidenceUrls: [],
+    status: 'pending',
+    verified: false,
+    createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    incidentId: 'TN-VLR-008',
+    reporterId: 'mock-user-citizen-001',
+    reporterName: 'Demo Citizen User',
+    reporterEmail: 'user@respondai.local',
+    title: 'Minor chemical spill inside dyeing unit',
+    description: 'Workers reported a small spill from a cleaning chemical container. The unit has been ventilated and workers are waiting outside as a precaution.',
+    category: 'other',
+    severity: 'high',
+    location: 'Katpadi Industrial Estate, Vellore, Tamil Nadu',
+    latitude: 12.9693,
+    longitude: 79.1378,
+    peopleAffected: 5,
+    evidenceUrls: [],
+    status: 'in_progress',
+    verified: true,
+    createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+  },
+  {
+    incidentId: 'TN-NGK-009',
+    reporterId: 'mock-user-citizen-001',
+    reporterName: 'Demo Citizen User',
+    reporterEmail: 'user@respondai.local',
+    title: 'Fishing boat overdue after rough sea warning',
+    description: 'Family members report that a small fishing boat has not returned after a rough-sea advisory. Coast Guard control room has been notified with the last known departure point.',
+    category: 'natural_disaster',
+    severity: 'high',
+    location: 'Nagapattinam Fishing Harbour, Tamil Nadu',
+    latitude: 10.7656,
+    longitude: 79.8444,
+    peopleAffected: 4,
+    evidenceUrls: [],
+    status: 'reported',
+    verified: true,
+    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    incidentId: 'TN-ERD-010',
+    reporterId: 'mock-user-citizen-001',
+    reporterName: 'Demo Citizen User',
+    reporterEmail: 'user@respondai.local',
+    title: 'Auto-rickshaw stalled on railway crossing approach',
+    description: 'An auto-rickshaw has stalled close to a level-crossing approach during peak traffic. Police are managing the queue while a tow vehicle is arranged.',
+    category: 'road_accident',
+    severity: 'low',
+    location: 'Surampatti, Erode, Tamil Nadu',
+    latitude: 11.3410,
+    longitude: 77.7172,
+    peopleAffected: 0,
+    evidenceUrls: [],
+    status: 'resolved',
+    verified: true,
+    createdAt: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
   },
 ]
 
@@ -635,16 +712,110 @@ export function subscribeToIncidentUpdates(
   }
 }
 
-// ─── SOS Requests ─────────────────────────────────────────────────────────────
+// ─── SOS Requests Local & Cloud Store ─────────────────────────────────────────
+
+const LOCAL_SOS_KEY = 'respondai:sos_requests'
+
+const INITIAL_SEED_SOS: SOSRequest[] = [
+  {
+    sosId: 'SOS-SEED-01',
+    userId: 'mock-user-citizen-001',
+    userName: 'Priya Sharma',
+    userEmail: 'user@respondai.local',
+    userPhone: '+91 98112 34567',
+    location: 'Connaught Place Outer Circle, Block F, New Delhi',
+    latitude: 28.6315,
+    longitude: 77.2167,
+    emergencyType: 'medical',
+    description: 'Pedestrian unconscious after electric shock near metro gate 4',
+    status: 'acknowledged',
+    adminNotes: 'Paramedic Unit 4 dispatched; ETA 4 mins',
+    createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    acknowledgedAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+  },
+  {
+    sosId: 'SOS-SEED-02',
+    userId: 'mock-user-citizen-002',
+    userName: 'Rahul Verma',
+    userEmail: 'rahul.v@gmail.com',
+    userPhone: '+91 98765 11223',
+    location: 'Sarita Vihar Underpass, Mathura Road, New Delhi',
+    latitude: 28.5325,
+    longitude: 77.2995,
+    emergencyType: 'flood',
+    description: 'Vehicle trapped in flash waterlogging, water level rising to doors',
+    status: 'active',
+    createdAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+  },
+]
+
+export function getLocalSOS(): SOSRequest[] {
+  if (typeof window === 'undefined') return INITIAL_SEED_SOS
+  try {
+    const raw = localStorage.getItem(LOCAL_SOS_KEY)
+    if (!raw) {
+      localStorage.setItem(LOCAL_SOS_KEY, JSON.stringify(INITIAL_SEED_SOS))
+      return INITIAL_SEED_SOS
+    }
+    return JSON.parse(raw)
+  } catch {
+    return INITIAL_SEED_SOS
+  }
+}
+
+export function saveLocalSOS(requests: SOSRequest[]): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(LOCAL_SOS_KEY, JSON.stringify(requests))
+    window.dispatchEvent(new CustomEvent('respondai:sos_updated', { detail: requests }))
+  } catch {}
+}
 
 export async function createSOS(data: Omit<SOSRequest, 'sosId'>): Promise<string> {
-  const ref = await addDoc(collection(db, COLLECTIONS.SOS_REQUESTS), data)
-  await updateDoc(ref, { sosId: ref.id })
-  return ref.id
+  const localId = `SOS-${Date.now().toString(36).toUpperCase()}`
+
+  // Clean data to avoid undefined values which cause Firestore errors
+  const cleanData: Record<string, any> = {
+    ...data,
+    sosId: localId,
+    userEmail: data.userEmail || null,
+    userPhone: data.userPhone || null,
+    description: data.description || 'Immediate emergency assistance requested',
+    status: data.status || 'active',
+    createdAt: data.createdAt || nowISO(),
+  }
+
+  const newSOS = cleanData as SOSRequest
+
+  // Save to local cache first so it's always responsive
+  const current = getLocalSOS()
+  const updated = [newSOS, ...current.filter((s) => s.sosId !== localId)]
+  saveLocalSOS(updated)
+
+  // Sync to Cloud Firestore if authenticated
+  if (auth.currentUser) {
+    try {
+      const docRef = doc(db, COLLECTIONS.SOS_REQUESTS, localId)
+      await setDoc(docRef, cleanData)
+    } catch (err) {
+      // Permission restrictions or offline fallback
+      console.warn('SOS cached locally; Firestore cloud sync skipped:', err)
+    }
+  }
+
+  return localId
 }
 
 export async function updateSOS(id: string, data: Partial<SOSRequest>): Promise<void> {
-  await updateDoc(doc(db, COLLECTIONS.SOS_REQUESTS, id), data)
+  const current = getLocalSOS()
+  const updated = current.map((s) => (s.sosId === id ? { ...s, ...data } : s))
+  saveLocalSOS(updated)
+
+  if (auth.currentUser) {
+    try {
+      await updateDoc(doc(db, COLLECTIONS.SOS_REQUESTS, id), data)
+    } catch {}
+  }
 }
 
 export function subscribeToUserSOS(
@@ -652,7 +823,18 @@ export function subscribeToUserSOS(
   callback: (requests: SOSRequest[]) => void,
   onError?: (err: FirestoreError) => void
 ) {
-  return subscribeWithAuth(
+  const filterLocal = () => getLocalSOS().filter((r) => r.userId === uid || !r.userId)
+  callback(filterLocal())
+
+  const handleUpdate = () => {
+    callback(filterLocal())
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('respondai:sos_updated', handleUpdate)
+  }
+
+  const unsub = subscribeWithAuth(
     (emit, fail) => {
       const q = query(
         collection(db, COLLECTIONS.SOS_REQUESTS),
@@ -662,20 +844,52 @@ export function subscribeToUserSOS(
       )
       return onSnapshot(
         q,
-        (snap) => emit(snap.docs.map((d) => normalizeTimestamps(d.data() as SOSRequest))),
-        fail
+        (snap) => {
+          const cloud = snap.docs.map((d) => normalizeTimestamps(d.data() as SOSRequest))
+          const currentLocal = filterLocal()
+          const map = new Map<string, SOSRequest>()
+          for (const item of [...currentLocal, ...cloud]) {
+            map.set(item.sosId, item)
+          }
+          emit(
+            Array.from(map.values()).sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            )
+          )
+        },
+        (err) => {
+          console.warn('Cloud SOS user listener error, using local:', err.message)
+          if (onError) onError(err)
+        }
       )
     },
     callback,
     onError
   )
+
+  return () => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('respondai:sos_updated', handleUpdate)
+    }
+    unsub()
+  }
 }
 
 export function subscribeToAllSOS(
   callback: (requests: SOSRequest[]) => void,
   onError?: (err: FirestoreError) => void
 ) {
-  return subscribeWithAuth(
+  callback(getLocalSOS())
+
+  const handleUpdate = () => {
+    callback(getLocalSOS())
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('respondai:sos_updated', handleUpdate)
+  }
+
+  const unsub = subscribeWithAuth(
     (emit, fail) => {
       const q = query(
         collection(db, COLLECTIONS.SOS_REQUESTS),
@@ -683,13 +897,35 @@ export function subscribeToAllSOS(
       )
       return onSnapshot(
         q,
-        (snap) => emit(snap.docs.map((d) => normalizeTimestamps(d.data() as SOSRequest))),
-        fail
+        (snap) => {
+          const cloud = snap.docs.map((d) => normalizeTimestamps(d.data() as SOSRequest))
+          const currentLocal = getLocalSOS()
+          const map = new Map<string, SOSRequest>()
+          for (const item of [...currentLocal, ...cloud]) {
+            map.set(item.sosId, item)
+          }
+          emit(
+            Array.from(map.values()).sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            )
+          )
+        },
+        (err) => {
+          console.warn('Cloud SOS admin listener error, using local:', err.message)
+          if (onError) onError(err)
+        }
       )
     },
     callback,
     onError
   )
+
+  return () => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('respondai:sos_updated', handleUpdate)
+    }
+    unsub()
+  }
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────────

@@ -48,11 +48,26 @@ html {
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image:
+    linear-gradient(rgba(49, 130, 206, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(49, 130, 206, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 50% -20%, rgba(49, 130, 206, 0.12), transparent 42rem);
+  background-size: 30px 30px, 30px 30px, 100% 100%;
+  animation: ambient-grid-drift 22s linear infinite;
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes ambient-grid-drift {
+  from { background-position: 0 0, 0 0, center top; }
+  to { background-position: 30px 30px, 30px 30px, center top; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { animation: none; }
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
@@ -75,6 +90,8 @@ body {
 .leaflet-container {
   font-family: var(--font-sans);
   border-radius: 8px;
+  isolation: isolate;
+  z-index: 0;
 }
 
 .leaflet-popup-content-wrapper {

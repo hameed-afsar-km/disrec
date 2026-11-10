@@ -44,8 +44,8 @@ function TestimonialCard({ testimonial, delay }: { testimonial: Testimonial; del
 
 export function SignInPage({ title, description, children, footer, showMap = true, testimonials = [] }: SignInPageProps) {
   return (
-    <main className="min-h-[100dvh] w-full bg-slate-50 font-sans md:grid md:grid-cols-2">
-      <section className="flex min-h-[100dvh] items-center justify-center px-5 py-10 sm:p-10 lg:p-16">
+    <main className="h-screen w-full overflow-y-auto bg-slate-50 font-sans md:grid md:grid-cols-2">
+      <section className="flex min-h-full items-center justify-center px-5 py-10 sm:p-10 lg:p-16">
         <div className="w-full max-w-md">
           <Link href="/" className="animate-element animate-delay-100 mb-10 inline-flex items-center gap-2 font-bold text-slate-900">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e53945] text-white shadow-lg shadow-red-200">
@@ -63,7 +63,7 @@ export function SignInPage({ title, description, children, footer, showMap = tru
       </section>
 
       {showMap && (
-        <section className="relative hidden min-h-[100dvh] p-4 md:block">
+        <section className="relative hidden min-h-full p-4 md:block">
           <div className="animate-slide-right animate-delay-200 absolute inset-4 overflow-hidden rounded-[2rem] bg-slate-100 shadow-2xl">
             <div className="absolute inset-0 opacity-95">
               <EmergencyMapContainer incidents={[]} center={[20.5937, 78.9629]} zoom={5} />

@@ -12,7 +12,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   if (pathname === '/login') return <>{children}</>
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#101b2d] via-[#16243a] to-[#1e3151] flex flex-col">
+    <div className="h-screen overflow-y-auto bg-gradient-to-br from-[#101b2d] via-[#16243a] to-[#1e3151] flex flex-col">
       <div className="p-6">
         <Link href="/" className="inline-flex items-center gap-2 text-white font-bold text-lg">
           <div className="w-8 h-8 bg-[#e53945] rounded-lg flex items-center justify-center">
