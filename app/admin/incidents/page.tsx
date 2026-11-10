@@ -207,106 +207,198 @@ export default function AdminIncidentsPage() {
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((inc) => {
                   const isCritical = inc.severity === 'critical';
+                  const isExpanded = expandedRowId === inc.incidentId;
                   return (
-                  <tr
-                    key={inc.incidentId}
-                    className={`transition-colors ${
-                      isCritical
-                        ? 'bg-red-50/70 border-l-4 border-l-red-600 hover:bg-red-50'
-                        : 'hover:bg-slate-50/80'
-                    }`}
-                  >
-                    {/* ID & Category */}
-                    <td className="p-3.5 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{categoryIcons[inc.category] || '⚠️'}</span>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-xs font-bold text-slate-800">
-                              #{inc.incidentId.slice(-6)}
-                            </span>
-                            {isCritical && (
-                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-red-600 text-white animate-pulse">
-                                CRITICAL
+                    <React.Fragment key={inc.incidentId}>
+                      <tr
+                        className={`transition-colors ${
+                          isExpanded
+                            ? 'bg-blue-50/50'
+                            : isCritical
+                            ? 'bg-red-50/70 border-l-4 border-l-red-600 hover:bg-red-50'
+                            : 'hover:bg-slate-50/80'
+                        }`}
+                      >
+                        {/* ID & Category */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedRowId(isExpanded ? null : inc.incidentId)}
+                              className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+                              title={isExpanded ? 'Collapse' : 'Expand details'}
+                            >
+                              {isExpanded ? (
+                                <ChevronUp size={15} className="text-blue-600" />
+                              ) : (
+                                <ChevronDown size={15} />
+                              )}
+                            </button>
+                            <span className="text-lg">{categoryIcons[inc.category] || '⚠️'}</span>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-xs font-bold text-slate-800">
+                                  #{inc.incidentId.slice(-6)}
+                                </span>
+                                {isCritical && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-red-600 text-white animate-pulse">
+                                    CRITICAL
+                                  </span>
+                                )}
+                              </div>
+                              <span className="block text-[10px] text-slate-400 capitalize">
+                                {inc.category.replace('_', ' ')}
                               </span>
-                            )}
+                            </div>
                           </div>
-                          <span className="block text-[10px] text-slate-400 capitalize">
-                            {inc.category.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
+                        </td>
 
-                    {/* Title & Location */}
-                    <td className="p-3.5 max-w-xs">
-                      <Link
-                        href={`/admin/incidents/${inc.incidentId}`}
-                        className="font-bold text-slate-900 hover:text-blue-600 block truncate"
-                      >
-                        {inc.title}
-                      </Link>
-                      <p className="text-[11px] text-slate-500 truncate">{inc.location}</p>
-                    </td>
+                        {/* Title & Location */}
+                        <td className="p-3.5 max-w-xs">
+                          <Link
+                            href={`/admin/incidents/${inc.incidentId}`}
+                            className="font-bold text-slate-900 hover:text-blue-600 block truncate"
+                          >
+                            {inc.title}
+                          </Link>
+                          <p className="text-[11px] text-slate-500 truncate">{inc.location}</p>
+                        </td>
 
-                    {/* Severity */}
-                    <td className="p-3.5 whitespace-nowrap">
-                      <SeverityBadge severity={inc.severity} />
-                    </td>
+                        {/* Severity */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <SeverityBadge severity={inc.severity} />
+                        </td>
 
-                    {/* Status dropdown */}
-                    <td className="p-3.5 whitespace-nowrap">
-                      <select
-                        value={inc.status}
-                        onChange={(e) =>
-                          handleQuickStatusChange(inc.incidentId, e.target.value as IncidentStatus)
-                        }
-                        className="text-xs border border-slate-200 rounded px-2 py-1 bg-white focus:outline-none"
-                      >
-                        <option value="reported">Reported</option>
-                        <option value="pending">Pending</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="resolved">Resolved</option>
-                      </select>
-                    </td>
+                        {/* Status dropdown */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <select
+                            value={inc.status}
+                            onChange={(e) =>
+                              handleQuickStatusChange(inc.incidentId, e.target.value as IncidentStatus)
+                            }
+                            className="text-xs border border-slate-200 rounded px-2 py-1 bg-white focus:outline-none"
+                          >
+                            <option value="reported">Reported</option>
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="resolved">Resolved</option>
+                          </select>
+                        </td>
 
-                    {/* Reporter */}
-                    <td className="p-3.5 whitespace-nowrap">
-                      <p className="text-slate-800 font-medium truncate max-w-[120px]">
-                        {inc.reporterName || 'Anonymous'}
-                      </p>
-                      {inc.reporterEmail && (
-                        <p className="text-[10px] text-slate-400 truncate max-w-[120px]">
-                          {inc.reporterEmail}
-                        </p>
+                        {/* Reporter */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <p className="text-slate-800 font-medium truncate max-w-[120px]">
+                            {inc.reporterName || 'Anonymous'}
+                          </p>
+                          {inc.reporterEmail && (
+                            <p className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                              {inc.reporterEmail}
+                            </p>
+                          )}
+                        </td>
+
+                        {/* Time */}
+                        <td className="p-3.5 whitespace-nowrap text-slate-500 text-[11px]">
+                          {timeAgo(inc.createdAt)}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="p-3.5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Ask AI button directly in table row */}
+                            <IncidentAiChat
+                              incident={inc}
+                              buttonVariant="outline"
+                              buttonSize="sm"
+                              buttonLabel="Ask AI"
+                              buttonClassName="h-7 px-2 text-xs border-blue-200 text-blue-600 hover:bg-blue-50"
+                            />
+
+                            <Link href={`/admin/incidents/${inc.incidentId}`}>
+                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                                <Eye size={14} /> Review
+                              </Button>
+                            </Link>
+
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(inc)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 rounded transition-colors"
+                              title="Delete Report"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Expandable Sub-Row */}
+                      {isExpanded && (
+                        <tr className="bg-blue-50/20 border-b border-slate-200">
+                          <td colSpan={7} className="p-4">
+                            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                <div>
+                                  <h4 className="text-xs font-bold text-slate-900">
+                                    Incident Intelligence & Tactical Context
+                                  </h4>
+                                  <p className="text-[11px] text-slate-400">
+                                    Reported {formatDate(inc.createdAt)} ({timeAgo(inc.createdAt)}) · ID: #{inc.incidentId}
+                                  </p>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <IncidentAiChat
+                                    incident={inc}
+                                    buttonVariant="primary"
+                                    buttonSize="sm"
+                                    buttonLabel="Ask AI about this incident"
+                                    buttonClassName="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg"
+                                  />
+                                  <Link href={`/admin/incidents/${inc.incidentId}`}>
+                                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                                      Open Dossier →
+                                    </Button>
+                                  </Link>
+                                </div>
+                              </div>
+
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                                  Narrative Description
+                                </span>
+                                <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 whitespace-pre-wrap leading-relaxed">
+                                  {inc.description || 'No detailed narrative provided.'}
+                                </p>
+                              </div>
+
+                              {inc.evidenceUrls && inc.evidenceUrls.length > 0 && (
+                                <div>
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                                    Attached Evidence ({inc.evidenceUrls.length})
+                                  </span>
+                                  <div className="flex gap-2 overflow-x-auto pb-1">
+                                    {inc.evidenceUrls.map((url, i) => (
+                                      <a
+                                        key={i}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="h-16 w-20 rounded border border-slate-200 overflow-hidden shrink-0 hover:ring-2 hover:ring-blue-500"
+                                      >
+                                        <img src={url} alt={`Evidence ${i + 1}`} className="w-full h-full object-cover" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
                       )}
-                    </td>
-
-                    {/* Time */}
-                    <td className="p-3.5 whitespace-nowrap text-slate-500 text-[11px]">
-                      {timeAgo(inc.createdAt)}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="p-3.5 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Link href={`/admin/incidents/${inc.incidentId}`}>
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                            <Eye size={14} /> Review
-                          </Button>
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteTarget(inc)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 rounded transition-colors"
-                          title="Delete Report"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )})}
+                    </React.Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>

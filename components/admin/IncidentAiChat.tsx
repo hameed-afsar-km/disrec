@@ -220,10 +220,4 @@ export function IncidentAiChat({
       </Modal>
     </>
   )
-          </Button>
-        </form>
-        <p className="pt-2 text-[11px] text-slate-400">Use the microphone to dictate a question. AI guidance supports, but does not replace, dispatch procedures or emergency services.</p>
-      </Modal>
-    </>
-  )
 }
