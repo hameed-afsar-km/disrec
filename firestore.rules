@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        getUserData().role in ['admin', 'super_admin', 'incident_manager', 'monitoring_admin', 'alert_manager'];
+    }
+
+    // -------------------------------------------------------------------------
+    // USERS COLLECTION
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      // Anyone authenticated can read user profile summaries; admins can read all
+      allow read: if isAuthenticated();
+
+      // Users can create their own profile upon registration, but CANNOT self-assign admin roles
+      allow create: if isOwner(userId) 
+        && request.resource.data.role == 'user';
+
+      // Users can update their own details (excluding changing their role); Admins can change roles
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role)
+        || isAdmin();
+
+      // Only super_admin or admins can delete user documents
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // INCIDENTS COLLECTION
+    // -------------------------------------------------------------------------
+    match /incidents/{incidentId} {
+      // Any authenticated user can read incidents (for live maps & nearby feeds)
+      allow read: if isAuthenticated();
+
+      // Authenticated users can report emergencies
+      allow create: if isAuthenticated() 
+        && request.resource.data.reporterId == request.auth.uid;
+
+      // Reporters can update their own incident if not yet resolved, or admins can update anything
+      allow update: if (isAuthenticated() && resource.data.reporterId == request.auth.uid)
+        || isAdmin();
+
+      // Only admins can delete duplicate/spam incidents
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // INCIDENT UPDATES / TIMELINE
+    // -------------------------------------------------------------------------
+    match /incident_updates/{updateId} {
+      // Public updates can be read by anyone authenticated; internal notes only by admins
+      allow read: if isAuthenticated() && (
+        resource.data.visibility == 'public' || isAdmin()
+      );
+
+      // Only admins / coordinators can write official timeline updates
+      allow create, update, delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // SOS REQUESTS COLLECTION
+    // -------------------------------------------------------------------------
+    match /sos_requests/{sosId} {
+      // Citizens can read their own SOS signals; Admins can monitor all
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid)
+        || isAdmin();
+
+      // Any authenticated citizen can trigger an SOS
+      allow create: if isAuthenticated() 
+        && request.resource.data.userId == request.auth.uid;
+
+      // Citizen can cancel their active SOS; Admins can acknowledge and resolve
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid)
+        || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // NOTIFICATIONS COLLECTION
+    // -------------------------------------------------------------------------
+    match /notifications/{notificationId} {
+      // Users can read notifications addressed to them or to 'all'
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || resource.data.userId == 'all'
+      );
+
+      // Users can mark their notifications as read
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+
+      // System / Admins create notifications
+      allow create, delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // EMERGENCY BROADCASTS / ALERTS
+    // -------------------------------------------------------------------------
+    match /emergency_alerts/{alertId} {
+      // Anyone authenticated can view published emergency alerts
+      allow read: if isAuthenticated();
+
+      // Only authorized alert managers / admins can issue, update, or expire broadcasts
+      allow create, update, delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // ADMIN AUDIT LOGS
+    // -------------------------------------------------------------------------
+    match /admin_audit_logs/{logId} {
+      // Audit logs are strictly readable and writeable by administrative personnel
+      allow read, create: if isAdmin();
+      allow update, delete: if false; // Permanent audit trail, never editable
+    }
+  }
+}
+

@@ -1,0 +1,40 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin', 'incident_manager', 'monitoring_admin', 'alert_manager'];
+    }
+
+    // Evidence uploads for emergency reports
+    match /evidence/{userId}/{fileName} {
+      // Authenticated users can view uploaded evidence
+      allow read: if isAuthenticated();
+
+      // Users can upload their own evidence files (images/videos under 15MB)
+      allow create: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.size < 15 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType.matches('video/.*'));
+
+      // Only admins or the uploader can delete
+      allow delete: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
+    }
+
+    // User avatars / profile photos
+    match /avatars/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() 
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
+

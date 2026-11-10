@@ -1,26 +1,175 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* ─── Design System Tokens ─────────────────────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Colors */
+  --color-navy-950: #0a1120;
+  --color-navy-900: #101b2d;
+  --color-navy-800: #16243a;
+  --color-navy-700: #1e3151;
+  --color-navy-600: #274268;
+
+  --color-emergency-red: #e53945;
+  --color-emergency-red-dark: #c0252f;
+  --color-emergency-red-light: #fde8ea;
+
+  --color-alert-orange: #f59e0b;
+  --color-alert-orange-light: #fef3c7;
+
+  --color-info-blue: #3182ce;
+  --color-info-blue-light: #ebf8ff;
+
+  --color-success-green: #16a34a;
+  --color-success-green-light: #dcfce7;
+
+  --color-bg-light: #f4f6fa;
+  --color-bg-card: #ffffff;
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── Base Styles ───────────────────────────────────────────────────────────── */
+:root {
+  --background: #f4f6fa;
+  --foreground: #101b2d;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ─── Leaflet Map Overrides ─────────────────────────────────────────────────── */
+.leaflet-container {
+  font-family: var(--font-sans);
+  border-radius: 8px;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* ─── Custom Utilities ──────────────────────────────────────────────────────── */
+.severity-critical {
+  background-color: #fde8ea;
+  color: #c0252f;
+  border-color: #e53945;
+}
+
+.severity-high {
+  background-color: #fef3c7;
+  color: #d97706;
+  border-color: #f59e0b;
+}
+
+.severity-medium {
+  background-color: #ebf8ff;
+  color: #2563eb;
+  border-color: #3182ce;
+}
+
+.severity-low {
+  background-color: #dcfce7;
+  color: #15803d;
+  border-color: #16a34a;
+}
+
+/* ─── Focus styles ──────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #3182ce;
+  outline-offset: 2px;
+}
+
+/* ─── Admin sidebar ─────────────────────────────────────────────────────────── */
+.admin-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.admin-sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.admin-sidebar-link.active {
+  background-color: rgba(49, 130, 206, 0.2);
+  color: #60a5fa;
+}
+
+/* ─── SOS pulse animation ───────────────────────────────────────────────────── */
+@keyframes sos-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229, 57, 69, 0.4); }
+  50% { box-shadow: 0 0 0 20px rgba(229, 57, 69, 0); }
+}
+
+.sos-active {
+  animation: sos-pulse 1.5s ease-in-out infinite;
+}
+
+/* ─── Chat bubbles ──────────────────────────────────────────────────────────── */
+.chat-bubble-user {
+  background: #3182ce;
+  color: #ffffff;
+  border-radius: 18px 18px 4px 18px;
+}
+
+.chat-bubble-ai {
+  background: #ffffff;
+  color: #101b2d;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px 18px 18px 4px;
+}
+
+/* ─── Skeleton loader ───────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
 }
