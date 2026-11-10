@@ -75,3 +75,4 @@ export function clearMockSession() {
   document.cookie = `user-role=; path=/; max-age=0`
   window.dispatchEvent(new Event('mock-auth-changed'))
 }
+
