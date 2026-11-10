@@ -1,40 +1,22 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Bot, MessageCircle, Mic, MicOff, Send, User } from 'lucide-react'
+import { Bot, MessageCircle, Mic, MicOff, Send, User, Globe } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Markdown } from '@/components/ui/Markdown'
+import {
+  AI_LANGUAGES,
+  getSpeechCode,
+  getLanguageName,
+  type BrowserSpeechRecognition,
+} from '@/lib/ai-languages'
 import type { Incident } from '@/lib/types'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
-}
-
-interface SpeechRecognitionResultEvent extends Event {
-  results: SpeechRecognitionResultList
-}
-
-interface BrowserSpeechRecognition {
-  continuous: boolean
-  interimResults: boolean
-  lang: string
-  start: () => void
-  stop: () => void
-  onresult: ((event: SpeechRecognitionResultEvent) => void) | null
-  onend: (() => void) | null
-  onerror: ((event: { error: string }) => void) | null
-}
-
-type SpeechRecognitionConstructor = new () => BrowserSpeechRecognition
-
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionConstructor
-    webkitSpeechRecognition?: SpeechRecognitionConstructor
-  }
 }
 
 const greeting = 'I can help assess this incident, identify information gaps, and suggest safe next operational steps. What would you like to know?'
@@ -64,6 +46,7 @@ export function IncidentAiChat({
   iconOnly = false,
 }: IncidentAiChatProps) {
   const [open, setOpen] = useState(false)
+  const [selectedLang, setSelectedLang] = useState('en')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -98,7 +81,7 @@ export function IncidentAiChat({
     const recognition = new SpeechRecognition()
     recognition.continuous = false
     recognition.interimResults = true
-    recognition.lang = navigator.language || 'en-IN'
+    recognition.lang = getSpeechCode(selectedLang)
     recognition.onresult = (event) => {
       const transcript = Array.from(event.results)
         .map((result) => result[0]?.transcript ?? '')
@@ -115,6 +98,7 @@ export function IncidentAiChat({
     speechBaseInputRef.current = input.trim()
     recognition.start()
     setListening(true)
+    toast.info(`Listening in ${getLanguageName(selectedLang)}...`)
   }
 
   async function handleSend(customText?: string) {
@@ -131,7 +115,7 @@ export function IncidentAiChat({
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages, incident }),
+        body: JSON.stringify({ messages: nextMessages, incident, language: selectedLang }),
       })
       const data = await response.json()
       if (!response.ok || !data.reply) throw new Error(data.error || 'No response from AI')
@@ -159,12 +143,37 @@ export function IncidentAiChat({
       </Button>
 
       <Modal open={open} onClose={() => { stopListening(); setOpen(false) }} title="Ask AI about this incident" size="xl" className="max-h-[90vh] flex flex-col">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-100 text-xs text-slate-500">
-          <Bot size={16} className="text-blue-600 shrink-0" />
-          <span className="truncate">Context: <strong className="text-slate-700">{incident.title}</strong> · #{incident.incidentId.slice(-6)}</span>
-          <span className="ml-auto text-[10px] font-mono uppercase bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
-            {incident.category.replace('_', ' ')}
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 text-xs text-slate-500">
+          <div className="flex items-center gap-2 truncate">
+            <Bot size={16} className="text-blue-600 shrink-0" />
+            <span className="truncate">Context: <strong className="text-slate-700">{incident.title}</strong> · #{incident.incidentId.slice(-6)}</span>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Multi-language selector */}
+            <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 rounded-md px-1.5 py-0.5 text-slate-700">
+              <Globe size={13} className="text-slate-400" />
+              <select
+                value={selectedLang}
+                onChange={(e) => {
+                  setSelectedLang(e.target.value)
+                  stopListening()
+                }}
+                className="bg-transparent text-xs font-medium focus:outline-none cursor-pointer"
+                title="Select Language for Speech Recognition & AI Response"
+              >
+                {AI_LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <span className="text-[10px] font-mono uppercase bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+              {incident.category.replace('_', ' ')}
+            </span>
+          </div>
         </div>
 
         <div className="h-[min(52vh,430px)] overflow-y-auto space-y-4 py-4 pr-1">

@@ -6,11 +6,17 @@ import { Button } from '@/components/ui/Button'
 import { Markdown } from '@/components/ui/Markdown'
 import {
   Send, Sparkles, AlertTriangle,
-  RotateCcw, Bot, User, Globe
+  RotateCcw, Bot, User, Globe, Mic, MicOff
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/components/auth/AuthProvider'
-import { AI_LANGUAGES, DEFAULT_AI_LANGUAGE } from '@/lib/ai-languages'
+import {
+  AI_LANGUAGES,
+  DEFAULT_AI_LANGUAGE,
+  getLanguageName,
+  getSpeechCode,
+  type BrowserSpeechRecognition,
+} from '@/lib/ai-languages'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -143,8 +149,11 @@ export default function AssistantPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [listening, setListening] = useState(false)
   const [provider, setProvider] = useState<'groq' | 'ollama' | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
+  const speechBaseInputRef = useRef('')
 
   // User-selected language wins, otherwise fall back to their saved profile preference
   const language = languageOverride ?? appUser?.preferredLanguage ?? DEFAULT_AI_LANGUAGE
@@ -158,10 +167,67 @@ export default function AssistantPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop()
+    }
+  }, [])
+
+  function stopListening() {
+    recognitionRef.current?.stop()
+    setListening(false)
+  }
+
+  function toggleSpeechToText() {
+    if (listening) {
+      stopListening()
+      return
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      toast.error('Speech-to-text is not supported in this browser. Try Chrome or Edge.')
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = false
+    recognition.interimResults = true
+    recognition.lang = getSpeechCode(language)
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((res) => res[0]?.transcript ?? '')
+        .join('')
+        .trim()
+      if (transcript) {
+        setInput(`${speechBaseInputRef.current}${speechBaseInputRef.current ? ' ' : ''}${transcript}`)
+      }
+    }
+
+    recognition.onerror = (event) => {
+      if (event.error !== 'aborted') {
+        toast.error('Could not capture voice input. Please try again.')
+      }
+      setListening(false)
+    }
+
+    recognition.onend = () => {
+      setListening(false)
+    }
+
+    recognitionRef.current = recognition
+    speechBaseInputRef.current = input.trim()
+    recognition.start()
+    setListening(true)
+    toast.info(`Listening in ${getLanguageName(language)}...`)
+  }
+
   async function handleSend(text?: string) {
     const query = text || input.trim()
     if (!query || loading) return
 
+    stopListening()
     const newMessages: ChatMessage[] = [...messages, { role: 'user', content: query }]
     setMessages(newMessages)
     setInput('')
@@ -311,6 +377,21 @@ export default function AssistantPage() {
 
       {/* Chat Input Bar */}
       <div className="pt-3 border-t border-slate-200 shrink-0">
+        {listening && (
+          <div className="mb-2 flex items-center justify-between text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-1.5 animate-pulse">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-600" />
+              Listening ({getLanguageName(language)})... Speak clearly into your microphone
+            </span>
+            <button
+              type="button"
+              onClick={stopListening}
+              className="font-medium hover:underline ml-2"
+            >
+              Done
+            </button>
+          </div>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -322,10 +403,25 @@ export default function AssistantPage() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t.placeholder}
+            placeholder={listening ? `Listening in ${getLanguageName(language)}...` : t.placeholder}
             disabled={loading}
-            className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`flex-1 px-4 py-2.5 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              listening ? 'border-rose-400 ring-2 ring-rose-200' : 'border-slate-200'
+            }`}
           />
+          <button
+            type="button"
+            onClick={toggleSpeechToText}
+            disabled={loading}
+            title={listening ? 'Stop voice input' : `Voice input in ${getLanguageName(language)}`}
+            className={`h-10 w-10 shrink-0 rounded-xl border flex items-center justify-center transition-all ${
+              listening
+                ? 'bg-rose-600 text-white border-rose-600 shadow-md animate-pulse'
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
+            }`}
+          >
+            {listening ? <MicOff size={18} /> : <Mic size={18} />}
+          </button>
           <Button
             type="submit"
             variant="primary"

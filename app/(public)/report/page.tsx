@@ -9,13 +9,15 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { SeverityBadge } from '@/components/ui/Badge'
 import {
   AlertTriangle, MapPin, Upload, Sparkles, CheckCircle2,
-  AlertCircle, Users, Phone, ArrowLeft, Loader2, Navigation, X, ImageIcon
+  AlertCircle, Users, Phone, ArrowLeft, Loader2, Navigation, X, ImageIcon, Mic
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createIncident, nowISO } from '@/lib/firestore'
 import { generateId } from '@/lib/utils'
 import type { EmergencyCategory, Severity, Incident } from '@/lib/types'
 import { CATEGORY_LABELS, SEVERITY_LABELS } from '@/lib/types'
+import { VoiceQuickReportModal } from '@/components/report/VoiceQuickReportModal'
+import type { QuickReportExtracted } from '@/app/api/ai/quick-report/route'
 
 // Helper to convert selected image files into lightweight local base64 Data URLs
 async function fileToLocalDataUrl(file: File): Promise<string> {
@@ -103,6 +105,40 @@ function ReportForm() {
   } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submittedIncidentId, setSubmittedIncidentId] = useState<string | null>(null)
+
+  // Voice AI Quick Report modal
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false)
+
+  function handleVoiceTransfer(
+    extracted: QuickReportExtracted,
+    gps?: { latitude: number; longitude: number; address: string }
+  ) {
+    if (extracted.title) setTitle(extracted.title)
+    if (extracted.category) setCategory(extracted.category)
+    if (extracted.description) {
+      setDescription(
+        `${extracted.description}\n\n[Family Status]: ${extracted.familyStatus || 'Unspecified'}\n[Special Hazards]: ${extracted.hazards || 'None reported'}`
+      )
+    }
+    if (extracted.severity) {
+      setSeverity(extracted.severity)
+      setAiSeverityResult({
+        severity: extracted.severity,
+        reason: extracted.severityReason || 'Categorized via AI Voice Intake',
+      })
+    }
+    if (extracted.peopleAffected) setPeopleAffected(extracted.peopleAffected)
+    if (extracted.location) {
+      setLocation(extracted.location)
+    } else if (gps?.address) {
+      setLocation(gps.address)
+    }
+    if (gps?.latitude && gps?.longitude) {
+      setLatitude(gps.latitude)
+      setLongitude(gps.longitude)
+    }
+    toast.success('Voice intake data transferred to form! Review fields or attach evidence photos.')
+  }
 
   // Redirect if not logged in
   useEffect(() => {
@@ -292,18 +328,67 @@ function ReportForm() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
-      <div className="mb-6">
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-3"
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-2"
+          >
+            <ArrowLeft size={16} /> Back
+          </button>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#101b2d]">Report an Emergency</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Provide accurate details to help emergency coordinators respond quickly.
+          </p>
+        </div>
+
+        {/* Quick Voice Report CTA Button */}
+        <Button
+          type="button"
+          variant="danger"
+          size="md"
+          onClick={() => setVoiceModalOpen(true)}
+          className="shadow-lg shadow-red-600/25 bg-red-600 hover:bg-red-700 text-white font-bold flex items-center gap-2 self-start sm:self-auto py-2.5 px-4"
         >
-          <ArrowLeft size={16} /> Back
-        </button>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#101b2d]">Report an Emergency</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Provide accurate details to help emergency coordinators respond quickly.
-        </p>
+          <Mic size={18} className="animate-pulse" />
+          <span>Quick Report with Voice AI</span>
+        </Button>
       </div>
+
+      {/* Voice Quick Report Callout Banner */}
+      <div
+        onClick={() => setVoiceModalOpen(true)}
+        className="mb-8 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-red-950 via-slate-900 to-blue-950 text-white border border-red-500/40 shadow-xl cursor-pointer hover:border-red-400/80 transition-all group"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3 rounded-2xl bg-red-600 text-white shadow-lg shadow-red-600/50 group-hover:scale-105 transition-transform shrink-0">
+              <Mic size={22} className="animate-pulse" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-extrabold text-sm sm:text-base">Hands-Free Voice AI Quick Report</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/40">
+                  MULTI-LINGUAL STT
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-1">
+                Speak in English, Hindi, Bengali, Tamil, or Telugu. AI automatically extracts location, severity, and asks about family safety.
+              </p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" className="hidden sm:flex text-white hover:bg-white/10 shrink-0">
+            Start Speaking →
+          </Button>
+        </div>
+      </div>
+
+      {/* Voice Quick Report Modal */}
+      <VoiceQuickReportModal
+        open={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+        onTransferToForm={handleVoiceTransfer}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Category Selection */}
