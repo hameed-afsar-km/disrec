@@ -14,7 +14,36 @@ export type EmergencyCategory =
 
 export type Severity = 'low' | 'medium' | 'high' | 'critical'
 
-export type IncidentStatus = 'reported' | 'pending' | 'in_progress' | 'resolved'
+export type IncidentStatus = 'reported' | 'assigned' | 'in_progress' | 'resolved' | 'pending'
+
+export type TeamResponseCategory =
+  | 'fire'
+  | 'medical'
+  | 'rescue'
+  | 'police'
+  | 'hazmat'
+  | 'general'
+
+export type TeamStatus = 'available' | 'busy' | 'offline'
+
+export interface ResponseTeam {
+  teamId: string
+  name: string
+  callSign?: string
+  category: TeamResponseCategory
+  status: TeamStatus
+  latitude: number
+  longitude: number
+  locationAddress: string
+  assignedIncidentId?: string | null
+  assignedIncidentTitle?: string | null
+  memberCount: number
+  contactPhone: string
+  leaderName: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
 
 export type SOSStatus = 'active' | 'acknowledged' | 'in_progress' | 'resolved' | 'cancelled'
 
@@ -89,6 +118,10 @@ export interface Incident {
   status: IncidentStatus
   verified: boolean
   assignedAdminId?: string
+  assignedTeamId?: string
+  assignedTeamName?: string
+  priorityScore?: number
+  priorityLevel?: Severity
   createdAt: string
   updatedAt: string
   resolvedAt?: string
@@ -185,9 +218,25 @@ export const SEVERITY_LABELS: Record<Severity, string> = {
 
 export const STATUS_LABELS: Record<IncidentStatus, string> = {
   reported: 'Reported',
+  assigned: 'Assigned',
   pending: 'Pending',
   in_progress: 'In Progress',
   resolved: 'Resolved',
+}
+
+export const TEAM_CATEGORY_LABELS: Record<TeamResponseCategory, string> = {
+  fire: 'Fire & Rescue',
+  medical: 'Emergency Medical (EMS)',
+  rescue: 'Search & Disaster Rescue (NDRF/SDRF)',
+  police: 'Law & Security',
+  hazmat: 'Hazardous Materials (HazMat)',
+  general: 'Civil Defense & General Response',
+}
+
+export const TEAM_STATUS_LABELS: Record<TeamStatus, string> = {
+  available: 'Available',
+  busy: 'Busy / Dispatched',
+  offline: 'Offline / Maintenance',
 }
 
 export const SOS_STATUS_LABELS: Record<SOSStatus, string> = {

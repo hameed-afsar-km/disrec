@@ -18,6 +18,7 @@ import {
   Bell,
   LogOut,
   X,
+  Truck,
 } from 'lucide-react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { cn } from '@/lib/utils'
@@ -44,6 +45,7 @@ const NAV_SECTIONS: NavSection[] = [
     section: 'Emergency Response',
     items: [
       { label: 'Incidents', href: '/admin/incidents', icon: <FileText size={16} /> },
+      { label: 'Response Teams', href: '/admin/teams', icon: <Truck size={16} /> },
       { label: 'SOS Management', href: '/admin/sos', icon: <AlertOctagon size={16} /> },
       { label: 'Alerts', href: '/admin/alerts', icon: <Radio size={16} /> },
       { label: 'Heatmap', href: '/admin/heatmap', icon: <Map size={16} /> },

@@ -121,6 +121,17 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
+    // RESPONSE TEAMS COLLECTION
+    // -------------------------------------------------------------------------
+    match /response_teams/{teamId} {
+      // Authenticated users/responders can view teams for map & status telemetry
+      allow read: if isAuthenticated();
+
+      // Only administrators can manage response teams and assignments
+      allow create, update, delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
     // ADMIN AUDIT LOGS
     // -------------------------------------------------------------------------
     match /admin_audit_logs/{logId} {

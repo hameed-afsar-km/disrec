@@ -75,9 +75,25 @@ export const severityColors: Record<Severity, { bg: string; text: string; border
 
 export const statusColors: Record<IncidentStatus, { bg: string; text: string }> = {
   reported: { bg: 'bg-slate-100', text: 'text-slate-700' },
+  assigned: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
   pending: { bg: 'bg-amber-100', text: 'text-amber-700' },
   in_progress: { bg: 'bg-blue-100', text: 'text-blue-700' },
   resolved: { bg: 'bg-green-100', text: 'text-green-700' },
+}
+
+export const teamStatusColors: Record<string, { bg: string; text: string; dot: string }> = {
+  available: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  busy: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500' },
+  offline: { bg: 'bg-slate-100', text: 'text-slate-600', dot: 'bg-slate-400' },
+}
+
+export const teamCategoryIcons: Record<string, string> = {
+  fire: '🚒',
+  medical: '🚑',
+  rescue: '🛟',
+  police: '🚓',
+  hazmat: '☣️',
+  general: '🛡️',
 }
 
 export const sosStatusColors: Record<SOSStatus, { bg: string; text: string }> = {

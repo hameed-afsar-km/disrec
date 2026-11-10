@@ -29,6 +29,7 @@ import type {
   AdminAuditLog,
   AppUser,
   IncidentUpdate,
+  ResponseTeam,
 } from './types'
 
 // ─── Collection References ────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ export const COLLECTIONS = {
   USERS: 'users',
   INCIDENTS: 'incidents',
   INCIDENT_UPDATES: 'incident_updates',
+  RESPONSE_TEAMS: 'response_teams',
   SOS_REQUESTS: 'sos_requests',
   NOTIFICATIONS: 'notifications',
   EMERGENCY_ALERTS: 'emergency_alerts',
@@ -287,8 +289,15 @@ export async function getIncident(id: string): Promise<Incident | null> {
 }
 
 export async function updateIncident(id: string, data: Partial<Incident>): Promise<void> {
+  let assignedTeamToRelease: string | undefined
+
   if (typeof window !== 'undefined') {
     const current = getLocalIncidents()
+    const target = current.find((i) => i.incidentId === id)
+    if (data.status === 'resolved' && target?.assignedTeamId) {
+      assignedTeamToRelease = target.assignedTeamId
+    }
+
     const updated = current.map((i) =>
       i.incidentId === id ? { ...i, ...data, updatedAt: nowISO() } : i
     )
@@ -298,8 +307,27 @@ export async function updateIncident(id: string, data: Partial<Incident>): Promi
 
   if (auth.currentUser) {
     try {
+      if (data.status === 'resolved' && !assignedTeamToRelease) {
+        const snap = await getDoc(doc(db, COLLECTIONS.INCIDENTS, id))
+        if (snap.exists()) {
+          assignedTeamToRelease = (snap.data() as Incident).assignedTeamId
+        }
+      }
       await updateDoc(doc(db, COLLECTIONS.INCIDENTS, id), { ...data, updatedAt: nowISO() })
     } catch {}
+  }
+
+  // Auto-release assigned response team when incident is resolved
+  if (data.status === 'resolved' && assignedTeamToRelease) {
+    try {
+      await updateResponseTeam(assignedTeamToRelease, {
+        status: 'available',
+        assignedIncidentId: null,
+        assignedIncidentTitle: null,
+      })
+    } catch (err) {
+      console.warn('Could not auto-release team on resolve:', err)
+    }
   }
 }
 
@@ -493,22 +521,118 @@ export function subscribeToAllIncidents(
   }
 }
 
-// ─── Incident Updates ─────────────────────────────────────────────────────────
+// ─── Incident Updates & Activity Timeline ────────────────────────────────────
+
+const LOCAL_UPDATES_KEY = 'respondai:incident_updates'
+
+export function getLocalIncidentUpdates(): IncidentUpdate[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(LOCAL_UPDATES_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
 
 export async function addIncidentUpdate(data: Omit<IncidentUpdate, 'updateId'>): Promise<string> {
-  const ref = await addDoc(collection(db, COLLECTIONS.INCIDENT_UPDATES), data)
-  await updateDoc(ref, { updateId: ref.id })
-  return ref.id
+  const localId = `UPD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+  const fullItem: IncidentUpdate = {
+    ...data,
+    updateId: localId,
+  }
+
+  if (typeof window !== 'undefined') {
+    const current = getLocalIncidentUpdates()
+    const next = [...current, fullItem]
+    localStorage.setItem(LOCAL_UPDATES_KEY, JSON.stringify(next))
+    window.dispatchEvent(new CustomEvent('respondai:updates_changed', { detail: next }))
+  }
+
+  if (auth.currentUser) {
+    try {
+      const ref = await addDoc(collection(db, COLLECTIONS.INCIDENT_UPDATES), data)
+      await updateDoc(ref, { updateId: ref.id })
+      return ref.id
+    } catch {}
+  }
+  return localId
 }
 
 export async function getIncidentUpdates(incidentId: string): Promise<IncidentUpdate[]> {
-  const q = query(
-    collection(db, COLLECTIONS.INCIDENT_UPDATES),
-    where('incidentId', '==', incidentId),
-    orderBy('createdAt', 'asc')
+  const local = getLocalIncidentUpdates().filter((u) => u.incidentId === incidentId)
+  if (!auth.currentUser) {
+    return local
+  }
+  try {
+    const q = query(
+      collection(db, COLLECTIONS.INCIDENT_UPDATES),
+      where('incidentId', '==', incidentId),
+      orderBy('createdAt', 'asc')
+    )
+    const snap = await getDocs(q)
+    const cloud = snap.docs.map((d) => normalizeTimestamps(d.data() as IncidentUpdate))
+    const map = new Map<string, IncidentUpdate>()
+    for (const item of [...local, ...cloud]) {
+      map.set(item.updateId, item)
+    }
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+  } catch {
+    return local
+  }
+}
+
+export function subscribeToIncidentUpdates(
+  incidentId: string,
+  callback: (updates: IncidentUpdate[]) => void
+) {
+  const local = getLocalIncidentUpdates().filter((u) => u.incidentId === incidentId)
+  callback(local)
+
+  const handleUpdate = () => {
+    callback(getLocalIncidentUpdates().filter((u) => u.incidentId === incidentId))
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('respondai:updates_changed', handleUpdate)
+  }
+
+  const unsub = subscribeWithAuth(
+    (emit, fail) => {
+      const q = query(
+        collection(db, COLLECTIONS.INCIDENT_UPDATES),
+        where('incidentId', '==', incidentId),
+        orderBy('createdAt', 'asc')
+      )
+      return onSnapshot(
+        q,
+        (snap) => {
+          const cloud = snap.docs.map((d) => normalizeTimestamps(d.data() as IncidentUpdate))
+          const currentLocal = getLocalIncidentUpdates().filter((u) => u.incidentId === incidentId)
+          const map = new Map<string, IncidentUpdate>()
+          for (const item of [...currentLocal, ...cloud]) {
+            map.set(item.updateId, item)
+          }
+          emit(
+            Array.from(map.values()).sort(
+              (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            )
+          )
+        },
+        fail
+      )
+    },
+    callback
   )
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => normalizeTimestamps(d.data() as IncidentUpdate))
+
+  return () => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('respondai:updates_changed', handleUpdate)
+    }
+    unsub()
+  }
 }
 
 // ─── SOS Requests ─────────────────────────────────────────────────────────────
@@ -654,4 +778,382 @@ export async function logAdminAction(data: Omit<AdminAuditLog, 'logId'>): Promis
   const ref = await addDoc(collection(db, COLLECTIONS.ADMIN_AUDIT_LOGS), data)
   await updateDoc(ref, { logId: ref.id })
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Module 2 & 3 & 4: Emergency Response Teams & Assignment Engine
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const LOCAL_TEAMS_KEY = 'respondai:response_teams'
+
+export const INITIAL_SEED_TEAMS: ResponseTeam[] = [
+  {
+    teamId: 'TEAM-FIRE-01',
+    name: 'Delhi Fire Brigade - Unit 4 Rapid Response',
+    callSign: 'BRAVO-4',
+    category: 'fire',
+    status: 'available',
+    latitude: 28.6304,
+    longitude: 77.2177,
+    locationAddress: 'Fire Station, Connaught Circus, New Delhi',
+    memberCount: 8,
+    contactPhone: '+91 11 2341 2222',
+    leaderName: 'Capt. Rajesh Sharma',
+    notes: 'Equipped with 3000L water tender, hydraulic rescue spreaders, breathing apparatus.',
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    teamId: 'TEAM-MED-02',
+    name: 'AIIMS Trauma Emergency Mobile Corps',
+    callSign: 'MEDIC-1',
+    category: 'medical',
+    status: 'available',
+    latitude: 28.5672,
+    longitude: 77.2100,
+    locationAddress: 'AIIMS Apex Trauma Centre, Ring Road, New Delhi',
+    memberCount: 5,
+    contactPhone: '+91 11 2659 8888',
+    leaderName: 'Dr. Sunita Rao (Chief Paramedic)',
+    notes: 'Advanced Life Support (ALS) ambulance with portable defibrillator, trauma stabilization kits.',
+    createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    teamId: 'TEAM-RESCUE-03',
+    name: 'NDRF 8th Battalion Urban Search & Rescue',
+    callSign: 'DISASTER-8',
+    category: 'rescue',
+    status: 'available',
+    latitude: 28.6448,
+    longitude: 77.2167,
+    locationAddress: 'State Disaster Management Depot, New Delhi',
+    memberCount: 14,
+    contactPhone: '+91 11 2436 3260',
+    leaderName: 'Inspector Vikram Singh',
+    notes: 'Heavy structural collapse equipment, acoustic life detectors, inflatable rescue boats.',
+    createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    teamId: 'TEAM-POLICE-04',
+    name: 'Central District Police Quick Reaction Team',
+    callSign: 'EAGLE-9',
+    category: 'police',
+    status: 'available',
+    latitude: 28.6421,
+    longitude: 77.2290,
+    locationAddress: 'Police Headquarters, ITO, New Delhi',
+    memberCount: 6,
+    contactPhone: '+91 11 2331 1111',
+    leaderName: 'ACP Manoj Verma',
+    notes: 'Traffic diversion, crowd perimeter security, emergency evacuation escort.',
+    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    teamId: 'TEAM-HAZMAT-05',
+    name: 'National CBRN & HazMat Containment Unit',
+    callSign: 'HAZMAT-DELTA',
+    category: 'hazmat',
+    status: 'available',
+    latitude: 28.5880,
+    longitude: 77.2340,
+    locationAddress: 'Lodhi Road Emergency Base, New Delhi',
+    memberCount: 7,
+    contactPhone: '+91 11 2469 1100',
+    leaderName: 'Cmdr. Amitav Mukherjee',
+    notes: 'Chemical, biological, electrical hazard containment gear, vapor suppressors.',
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    teamId: 'TEAM-CIVIL-06',
+    name: 'Civil Defense & Disaster Volunteer Corps',
+    callSign: 'SHIELD-GEN',
+    category: 'general',
+    status: 'available',
+    latitude: 28.6139,
+    longitude: 77.2090,
+    locationAddress: 'Janpath Civil Operations Center, New Delhi',
+    memberCount: 12,
+    contactPhone: '+91 11 2301 5555',
+    leaderName: 'Coordinator Priya Das',
+    notes: 'Food & shelter logistics, community evacuation assistance, general first response.',
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+]
+
+export function getLocalResponseTeams(): ResponseTeam[] {
+  if (typeof window === 'undefined') return INITIAL_SEED_TEAMS
+  try {
+    const raw = localStorage.getItem(LOCAL_TEAMS_KEY)
+    if (!raw) {
+      localStorage.setItem(LOCAL_TEAMS_KEY, JSON.stringify(INITIAL_SEED_TEAMS))
+      return INITIAL_SEED_TEAMS
+    }
+    return JSON.parse(raw)
+  } catch {
+    return INITIAL_SEED_TEAMS
+  }
+}
+
+export function saveLocalResponseTeams(teams: ResponseTeam[]) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(LOCAL_TEAMS_KEY, JSON.stringify(teams))
+  window.dispatchEvent(new CustomEvent('respondai:teams_updated', { detail: teams }))
+}
+
+export async function createResponseTeam(
+  data: Omit<ResponseTeam, 'teamId' | 'createdAt' | 'updatedAt'>
+): Promise<string> {
+  const localId = `TEAM-${data.category.toUpperCase().slice(0, 3)}-${Date.now().toString(36).toUpperCase()}`
+  const now = nowISO()
+  const newTeam: ResponseTeam = {
+    ...data,
+    teamId: localId,
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  const current = getLocalResponseTeams()
+  saveLocalResponseTeams([...current, newTeam])
+
+  if (auth.currentUser) {
+    try {
+      const ref = await addDoc(collection(db, COLLECTIONS.RESPONSE_TEAMS), newTeam)
+      await updateDoc(ref, { teamId: ref.id })
+      return ref.id
+    } catch {}
+  }
+  return localId
+}
+
+export async function updateResponseTeam(id: string, data: Partial<ResponseTeam>): Promise<void> {
+  const current = getLocalResponseTeams()
+  const updated = current.map((t) =>
+    t.teamId === id ? { ...t, ...data, updatedAt: nowISO() } : t
+  )
+  saveLocalResponseTeams(updated)
+
+  if (auth.currentUser) {
+    try {
+      await updateDoc(doc(db, COLLECTIONS.RESPONSE_TEAMS, id), { ...data, updatedAt: nowISO() })
+    } catch {}
+  }
+}
+
+export async function deleteResponseTeam(id: string): Promise<void> {
+  const current = getLocalResponseTeams()
+  const updated = current.filter((t) => t.teamId !== id)
+  saveLocalResponseTeams(updated)
+
+  if (auth.currentUser) {
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.RESPONSE_TEAMS, id))
+    } catch {}
+  }
+}
+
+export async function getResponseTeams(): Promise<ResponseTeam[]> {
+  const local = getLocalResponseTeams()
+  if (!auth.currentUser) return local
+
+  try {
+    const snap = await getDocs(collection(db, COLLECTIONS.RESPONSE_TEAMS))
+    const cloud = snap.docs.map((d) => normalizeTimestamps(d.data() as ResponseTeam))
+    const map = new Map<string, ResponseTeam>()
+    for (const t of [...local, ...cloud]) {
+      map.set(t.teamId, t)
+    }
+    return Array.from(map.values())
+  } catch {
+    return local
+  }
+}
+
+export function subscribeToResponseTeams(
+  callback: (teams: ResponseTeam[]) => void,
+  onError?: (err: FirestoreError) => void
+) {
+  const local = getLocalResponseTeams()
+  callback(local)
+
+  const handleCustomUpdate = (e: Event) => {
+    const detail = (e as CustomEvent<ResponseTeam[]>).detail || getLocalResponseTeams()
+    callback(detail)
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('respondai:teams_updated', handleCustomUpdate)
+  }
+
+  const unsubCloud = subscribeWithAuth(
+    (emit, fail) => {
+      const q = query(
+        collection(db, COLLECTIONS.RESPONSE_TEAMS),
+        orderBy('createdAt', 'desc')
+      )
+      return onSnapshot(
+        q,
+        (snap) => {
+          const cloud = snap.docs.map((d) => normalizeTimestamps(d.data() as ResponseTeam))
+          const currentLocal = getLocalResponseTeams()
+          const map = new Map<string, ResponseTeam>()
+          for (const item of [...currentLocal, ...cloud]) {
+            map.set(item.teamId, item)
+          }
+          emit(Array.from(map.values()))
+        },
+        fail
+      )
+    },
+    callback,
+    onError
+  )
+
+  return () => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('respondai:teams_updated', handleCustomUpdate)
+    }
+    unsubCloud()
+  }
+}
+
+/**
+ * Assigns an available response team to an incident.
+ * Updates incident status to 'assigned', marks the team as 'busy',
+ * and records an official entry in the incident activity timeline.
+ */
+export async function assignTeamToIncident(
+  incidentId: string,
+  teamId: string,
+  adminInfo?: { adminId: string; adminName: string },
+  distanceKm?: number
+): Promise<void> {
+  const teams = getLocalResponseTeams()
+  const incidents = getLocalIncidents()
+
+  const team = teams.find((t) => t.teamId === teamId)
+  const incident = incidents.find((i) => i.incidentId === incidentId)
+
+  if (!team) throw new Error('Response team not found')
+
+  // 1. Update incident
+  await updateIncident(incidentId, {
+    status: 'assigned',
+    assignedTeamId: team.teamId,
+    assignedTeamName: team.name,
+  })
+
+  // 2. Update response team to busy
+  await updateResponseTeam(team.teamId, {
+    status: 'busy',
+    assignedIncidentId: incidentId,
+    assignedIncidentTitle: incident?.title || 'Active Emergency Mission',
+  })
+
+  // 3. Post timeline activity update
+  const distanceMsg = typeof distanceKm === 'number' && distanceKm > 0 ? ` (${distanceKm} km away)` : ''
+  await addIncidentUpdate({
+    incidentId,
+    adminId: adminInfo?.adminId || 'admin',
+    adminName: adminInfo?.adminName || 'Incident Dispatcher',
+    previousStatus: incident?.status || 'reported',
+    newStatus: 'assigned',
+    message: `Team Dispatched: Assigned ${team.name} [Callsign: ${team.callSign || team.name}]${distanceMsg}. Leader: ${team.leaderName} (${team.contactPhone}). Team status set to BUSY.`,
+    visibility: 'public',
+    createdAt: nowISO(),
+  })
+
+  // 4. Log admin audit action
+  await logAdminAction({
+    adminId: adminInfo?.adminId || 'admin',
+    adminName: adminInfo?.adminName || 'Incident Dispatcher',
+    action: 'ASSIGN_RESPONSE_TEAM',
+    targetType: 'incident',
+    targetId: incidentId,
+    details: {
+      teamId: team.teamId,
+      teamName: team.name,
+      teamCategory: team.category,
+      distanceKm,
+    },
+    createdAt: nowISO(),
+  })
+}
+
+/**
+ * Releases/unassigns a team from an incident, returning the team to 'available'.
+ */
+export async function unassignTeamFromIncident(
+  incidentId: string,
+  teamId: string,
+  adminInfo?: { adminId: string; adminName: string }
+): Promise<void> {
+  const teams = getLocalResponseTeams()
+  const team = teams.find((t) => t.teamId === teamId)
+
+  // 1. Update incident
+  await updateIncident(incidentId, {
+    assignedTeamId: undefined,
+    assignedTeamName: undefined,
+    status: 'reported',
+  })
+
+  // 2. Update team to available
+  await updateResponseTeam(teamId, {
+    status: 'available',
+    assignedIncidentId: null,
+    assignedIncidentTitle: null,
+  })
+
+  // 3. Activity timeline log
+  await addIncidentUpdate({
+    incidentId,
+    adminId: adminInfo?.adminId || 'admin',
+    adminName: adminInfo?.adminName || 'Incident Dispatcher',
+    previousStatus: 'assigned',
+    newStatus: 'reported',
+    message: `Response team ${team?.name || teamId} was recalled/released by dispatch. Team returned to AVAILABLE standby.`,
+    visibility: 'internal',
+    createdAt: nowISO(),
+  })
+
+  // 4. Admin audit log
+  await logAdminAction({
+    adminId: adminInfo?.adminId || 'admin',
+    adminName: adminInfo?.adminName || 'Incident Dispatcher',
+    action: 'UNASSIGN_RESPONSE_TEAM',
+    targetType: 'incident',
+    targetId: incidentId,
+    details: { teamId },
+    createdAt: nowISO(),
+  })
+}
+
+/**
+ * Ensures initial teams are populated into Firestore if empty
+ */
+export async function seedInitialResponseTeams(): Promise<void> {
+  const local = getLocalResponseTeams()
+  if (local.length === 0) {
+    saveLocalResponseTeams(INITIAL_SEED_TEAMS)
+  }
+
+  if (auth.currentUser) {
+    try {
+      const snap = await getDocs(collection(db, COLLECTIONS.RESPONSE_TEAMS))
+      if (snap.empty) {
+        for (const t of INITIAL_SEED_TEAMS) {
+          const docRef = doc(db, COLLECTIONS.RESPONSE_TEAMS, t.teamId)
+          await updateDoc(docRef, t as any).catch(async () => {
+            await addDoc(collection(db, COLLECTIONS.RESPONSE_TEAMS), t)
+          })
+        }
+      }
+    } catch {}
+  }
+}
+
 
