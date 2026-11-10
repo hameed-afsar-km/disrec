@@ -120,37 +120,31 @@ export default function LandingPage() {
       {/* ── Entire Hero Section powered by TiltedGridHero ──────────────── */}
       <TiltedGridHero
         images={HERO_INCIDENT_IMAGES}
-        speed={3.8}
+        speed={3.5}
         curve={80}
-        tileHeight={26}
+        tileHeight={22}
         aspectRatio={16 / 9}
         gap={6}
-        axis={62}
-        fade={15}
-        className="relative w-full min-h-[780px] lg:min-h-[860px] bg-gradient-to-b from-[#060a14] via-[#0b1322] to-[#111f35] text-white overflow-hidden flex flex-col justify-between"
+        axis={52}
+        fade={12}
+        className="relative w-full h-[740px] sm:h-[800px] lg:h-[840px] bg-gradient-to-b from-[#060a14] via-[#091120] to-[#0d1628] text-white overflow-hidden border-b border-slate-800/80"
       >
         {/* Ambient atmospheric glows */}
-        <div className="absolute top-1/4 -right-28 w-96 h-96 bg-red-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-10 left-1/3 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 -right-28 w-96 h-96 bg-red-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-10 left-1/3 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* High-tech dot matrix grid */}
-        <div
-          className="absolute inset-0 opacity-10 pointer-events-none"
-          style={{
-            backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px)',
-            backgroundSize: '28px 28px',
-          }}
-        />
+        {/* Soft edge gradients */}
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#060a14]/90 to-transparent pointer-events-none z-[5]" />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#060a14]/95 to-transparent pointer-events-none z-[5]" />
 
-        {/* Contrast veil so content and rotating 3D incident cylinder harmoniously co-exist */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#060a14]/90 via-[#060a14]/40 to-[#060a14]/95 pointer-events-none" />
-
-        {/* Main Content Centered on the Curved Cylinder */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-24 pb-8 w-full flex-1 flex flex-col justify-center items-center text-center">
-          <motion.div {...fadeUp()} className="flex flex-col items-center max-w-4xl">
+        {/* Foreground Content Stack */}
+        <div className="relative z-10 flex h-full flex-col items-center justify-between py-8 sm:py-10 px-4 sm:px-6 lg:px-8 text-center pointer-events-none">
+          
+          {/* Top Block: Status Badge, Headline & Subtitle */}
+          <motion.div {...fadeUp()} className="pointer-events-auto max-w-4xl mx-auto flex flex-col items-center">
             {/* Live Status Badge */}
-            <div className="inline-flex items-center gap-2.5 bg-slate-900/80 border border-slate-700/80 shadow-inner rounded-full px-4 py-1.5 text-xs sm:text-sm font-medium text-slate-200 mb-6 backdrop-blur-md">
+            <div className="inline-flex items-center gap-2.5 bg-slate-950/80 border border-slate-700/80 shadow-lg rounded-full px-4 py-1.5 text-xs sm:text-sm font-medium text-slate-200 mb-3 backdrop-blur-md">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
@@ -164,7 +158,7 @@ export default function LandingPage() {
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6 text-balance">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.12] text-balance drop-shadow-lg mb-3">
               When Every{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-rose-400 to-amber-400">
                 Second
@@ -172,23 +166,25 @@ export default function LandingPage() {
               Counts, Precision Saves Lives.
             </h1>
 
-            {/* Subheading */}
-            <p className="text-base sm:text-lg md:text-xl text-slate-300 max-w-2xl mb-8 leading-relaxed font-normal text-balance">
-              Next-generation emergency coordination network. Instantly report incidents with GPS precision,
-              deploy automated AI severity triage, and access live emergency radar broadcasts in real time.
+            {/* Subtitle positioned directly with the headline */}
+            <p className="text-xs sm:text-sm md:text-base text-slate-300 max-w-xl font-normal text-balance">
+              Centralized emergency coordination network for rapid incident reporting, live responder telemetry, and sub-second AI severity triage.
             </p>
+          </motion.div>
 
+          {/* Bottom Block: CTAs & Capability Badges (positioned cleanly below the 3D cylinder) */}
+          <motion.div {...fadeUp(0.2)} className="pointer-events-auto max-w-3xl mx-auto flex flex-col items-center pb-2">
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto mb-10">
+            <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto mb-4">
               <Link href="/report">
                 <Button
                   variant="danger"
                   size="lg"
-                  className="w-full sm:w-auto shadow-xl shadow-red-600/30 hover:shadow-red-600/50 hover:scale-[1.03] transition-all duration-200 px-8 py-4 text-base font-semibold group flex items-center justify-center gap-2.5"
+                  className="shadow-xl shadow-red-600/35 hover:shadow-red-600/60 hover:scale-[1.03] transition-all px-7 py-3 text-sm sm:text-base font-semibold group flex items-center gap-2"
                 >
-                  <AlertTriangle size={20} className="text-white group-hover:rotate-12 transition-transform duration-200" />
+                  <AlertTriangle size={18} className="text-white group-hover:rotate-12 transition-transform" />
                   Report an Emergency
-                  <ArrowRight size={18} className="text-white/80 group-hover:translate-x-1 transition-transform duration-200" />
+                  <ArrowRight size={16} className="text-white/80 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
 
@@ -196,45 +192,48 @@ export default function LandingPage() {
                 <Button
                   variant="ghost"
                   size="lg"
-                  className="w-full sm:w-auto border border-slate-700/80 bg-slate-900/70 hover:bg-slate-800/90 text-white backdrop-blur-md px-7 py-4 text-base font-medium flex items-center justify-center gap-2.5 shadow-lg"
+                  className="border border-slate-700/80 bg-slate-900/80 hover:bg-slate-800 text-white backdrop-blur-md px-6 py-3 text-sm sm:text-base font-medium flex items-center gap-2 shadow-lg"
                 >
-                  <Map size={19} className="text-blue-400" />
-                  View Live Emergencies
+                  <Map size={18} className="text-blue-400" />
+                  View Live Map
                 </Button>
               </Link>
 
               <a
                 href="tel:112"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-sm font-semibold text-rose-300 hover:text-white bg-rose-950/50 hover:bg-rose-900/60 border border-rose-800/60 backdrop-blur-md transition-colors duration-200 shadow-lg"
+                className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold text-rose-300 hover:text-white bg-rose-950/80 hover:bg-rose-900 border border-rose-800/70 backdrop-blur-md transition-colors shadow-lg"
               >
-                <PhoneCall size={16} className="text-rose-400" />
+                <PhoneCall size={15} className="text-rose-400" />
                 <span>SOS: 112 / 911</span>
               </a>
             </div>
 
-            {/* Trust & Capability Micro-Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 pt-4 border-t border-slate-800/80 text-xs sm:text-sm font-medium text-slate-300">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={17} className="text-emerald-400 shrink-0" />
+            {/* Capability Trust Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[11px] sm:text-xs font-medium text-slate-300 bg-slate-950/80 backdrop-blur-md px-5 py-2 rounded-full border border-slate-800/80 shadow-md">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-emerald-400 shrink-0" />
                 <span>Sub-second AI Classification</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Navigation size={17} className="text-blue-400 shrink-0" />
+              <div className="flex items-center gap-1.5">
+                <Navigation size={14} className="text-blue-400 shrink-0" />
                 <span>GPS Telemetry & Geo-fence</span>
               </div>
-              <div className="flex items-center gap-2">
-                <RadioTower size={17} className="text-amber-400 shrink-0" />
+              <div className="flex items-center gap-1.5">
+                <RadioTower size={14} className="text-amber-400 shrink-0" />
                 <span>Real-time Community Alerts</span>
               </div>
             </div>
           </motion.div>
-        </div>
 
-        {/* Elevated Stats Strip */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 w-full">
+        </div>
+      </TiltedGridHero>
+
+      {/* ── Elevated Live Stats Strip ──────────────────────────────────── */}
+      <section className="bg-[#0b1322] border-b border-slate-800 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            {...fadeUp(0.3)}
-            className="pt-6 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-4"
+            {...fadeUp(0.2)}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
           >
             {[
               {
@@ -272,7 +271,7 @@ export default function LandingPage() {
             ].map(({ label, value, icon: Icon, color, badge, badgeColor }) => (
               <div
                 key={label}
-                className="bg-slate-900/70 border border-slate-800/90 hover:border-slate-700/80 rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 shadow-xl backdrop-blur-md flex flex-col justify-between"
+                className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 shadow-lg backdrop-blur-md flex flex-col justify-between"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className={`p-2 rounded-xl bg-slate-800/80 border border-slate-700/50 ${color}`}>
@@ -290,7 +289,7 @@ export default function LandingPage() {
             ))}
           </motion.div>
         </div>
-      </TiltedGridHero>
+      </section>
 
       {/* ── Emergency Categories ──────────────────────────────────────── */}
       <section className="py-16 bg-[#f4f6fa]">

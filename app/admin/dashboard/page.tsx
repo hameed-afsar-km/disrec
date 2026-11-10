@@ -9,12 +9,14 @@ import { SeverityBadge, StatusBadge, SOSStatusBadge } from '@/components/ui/Badg
 import { Markdown } from '@/components/ui/Markdown'
 import {
   AlertTriangle, FileText, AlertOctagon, CheckCircle,
-  Clock, Sparkles, Brain, ArrowRight, MapPin, ChevronRight
+  Clock, Sparkles, Brain, ArrowRight, MapPin, ChevronRight,
+  ChevronDown, ChevronUp, ShieldCheck, User, MessageCircle, ExternalLink
 } from 'lucide-react'
 import { subscribeToAllIncidents, subscribeToAllSOS } from '@/lib/firestore'
 import { timeAgo, categoryIcons } from '@/lib/utils'
 import type { Incident, SOSRequest } from '@/lib/types'
 import { CATEGORY_LABELS, SEVERITY_LABELS } from '@/lib/types'
+import { IncidentAiChat } from '@/components/admin/IncidentAiChat'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -25,6 +27,10 @@ export default function AdminDashboardPage() {
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [sosList, setSosList] = useState<SOSRequest[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Incident queue expansion & filter
+  const [expandedIncidentId, setExpandedIncidentId] = useState<string | null>(null)
+  const [incidentFilter, setIncidentFilter] = useState<'critical' | 'pending' | 'all'>('critical')
 
   // AI operational summary
   const [aiSummary, setAiSummary] = useState<string | null>(null)
@@ -272,45 +278,219 @@ export default function AdminDashboardPage() {
           </CardBody>
         </Card>
 
-        {/* Critical & High Incidents Queue */}
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <h3 className="font-bold text-sm text-[#101b2d] flex items-center gap-2">
-              <AlertTriangle size={16} className="text-amber-500" />
-              Critical & High Incident Queue
-            </h3>
-            <Link href="/admin/incidents" className="text-xs text-blue-600 hover:underline">
-              All Incidents →
-            </Link>
+        {/* Critical & High Incidents Queue with Expandable Ask AI Feature */}
+        <Card className="overflow-hidden">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3">
+            <div>
+              <h3 className="font-bold text-sm text-[#101b2d] flex items-center gap-2">
+                <AlertTriangle size={16} className="text-amber-500" />
+                Incident Queue & AI Command
+              </h3>
+              <p className="text-[11px] text-slate-400">Expand any incident to view details & ask AI</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-[11px] font-medium text-slate-600">
+                <button
+                  type="button"
+                  onClick={() => setIncidentFilter('critical')}
+                  className={`px-2 py-0.5 rounded-md transition-all ${
+                    incidentFilter === 'critical'
+                      ? 'bg-white text-slate-900 shadow-sm font-bold'
+                      : 'hover:text-slate-900'
+                  }`}
+                >
+                  Critical ({critical})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIncidentFilter('pending')}
+                  className={`px-2 py-0.5 rounded-md transition-all ${
+                    incidentFilter === 'pending'
+                      ? 'bg-white text-slate-900 shadow-sm font-bold'
+                      : 'hover:text-slate-900'
+                  }`}
+                >
+                  Pending ({pending})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIncidentFilter('all')}
+                  className={`px-2 py-0.5 rounded-md transition-all ${
+                    incidentFilter === 'all'
+                      ? 'bg-white text-slate-900 shadow-sm font-bold'
+                      : 'hover:text-slate-900'
+                  }`}
+                >
+                  All ({total})
+                </button>
+              </div>
+
+              <Link href="/admin/incidents" className="text-xs text-blue-600 hover:underline shrink-0">
+                All →
+              </Link>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
-            {incidents.filter((i) => i.severity === 'critical' || i.severity === 'high').length === 0 ? (
+            {incidents.filter((i) => {
+              if (incidentFilter === 'critical') return i.severity === 'critical' || i.severity === 'high'
+              if (incidentFilter === 'pending') return i.status === 'pending' || i.status === 'reported'
+              return true
+            }).length === 0 ? (
               <div className="p-6 text-center text-xs text-slate-400">
-                No critical or high emergencies reported.
+                No incidents matching the selected filter.
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 max-h-[580px] overflow-y-auto">
                 {incidents
-                  .filter((i) => i.severity === 'critical' || i.severity === 'high')
-                  .slice(0, 5)
-                  .map((inc) => (
-                    <Link
-                      key={inc.incidentId}
-                      href={`/admin/incidents/${inc.incidentId}`}
-                      className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors block"
-                    >
-                      <div className="min-w-0 space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <SeverityBadge severity={inc.severity} />
-                          <StatusBadge status={inc.status} />
-                          <span className="text-xs text-slate-400">{timeAgo(inc.createdAt)}</span>
+                  .filter((i) => {
+                    if (incidentFilter === 'critical') return i.severity === 'critical' || i.severity === 'high'
+                    if (incidentFilter === 'pending') return i.status === 'pending' || i.status === 'reported'
+                    return true
+                  })
+                  .slice(0, 10)
+                  .map((inc) => {
+                    const isExpanded = expandedIncidentId === inc.incidentId
+                    const isCritical = inc.severity === 'critical'
+                    return (
+                      <div
+                        key={inc.incidentId}
+                        className={`transition-colors ${
+                          isExpanded
+                            ? 'bg-blue-50/40'
+                            : isCritical
+                            ? 'hover:bg-red-50/30'
+                            : 'hover:bg-slate-50/80'
+                        }`}
+                      >
+                        {/* Summary Row (Click to toggle expansion) */}
+                        <div
+                          onClick={() => setExpandedIncidentId(isExpanded ? null : inc.incidentId)}
+                          className="p-3.5 flex items-start justify-between gap-3 cursor-pointer select-none"
+                        >
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-base">{categoryIcons[inc.category] || '⚠️'}</span>
+                              <span className="font-mono text-xs font-bold text-slate-800">
+                                #{inc.incidentId.slice(-6)}
+                              </span>
+                              <SeverityBadge severity={inc.severity} />
+                              <StatusBadge status={inc.status} />
+                              {inc.verified && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                  <ShieldCheck size={11} /> Verified
+                                </span>
+                              )}
+                              <span className="text-xs text-slate-400">{timeAgo(inc.createdAt)}</span>
+                            </div>
+
+                            <p className="text-xs font-bold text-slate-900 truncate">{inc.title}</p>
+                            <p className="text-[11px] text-slate-500 flex items-center gap-1 truncate">
+                              <MapPin size={12} className="shrink-0 text-slate-400" />
+                              {inc.location}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                            <span className="text-[11px] text-blue-600 font-semibold hidden sm:inline">
+                              {isExpanded ? 'Collapse' : 'Expand & Ask AI'}
+                            </span>
+                            <div className="p-1 rounded-md text-slate-400 hover:text-slate-700 bg-slate-100">
+                              {isExpanded ? (
+                                <ChevronUp size={16} className="text-blue-600" />
+                              ) : (
+                                <ChevronDown size={16} />
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-xs font-bold text-slate-900 truncate">{inc.title}</p>
-                        <p className="text-[11px] text-slate-500 truncate">{inc.location}</p>
+
+                        {/* Expanded Panel with Full Details & Ask AI button */}
+                        {isExpanded && (
+                          <div className="px-4 pb-4 pt-1 border-t border-slate-100 bg-white/80 space-y-3">
+                            {/* Narrative */}
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                                Incident Narrative & Notes
+                              </span>
+                              <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 leading-relaxed whitespace-pre-wrap">
+                                {inc.description || 'No detailed description provided by the reporter.'}
+                              </p>
+                            </div>
+
+                            {/* Meta Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                              <div className="bg-slate-50 p-2 rounded border border-slate-200/60">
+                                <span className="text-[10px] text-slate-400 block uppercase font-medium">Reporter</span>
+                                <span className="font-semibold text-slate-800 truncate block">
+                                  {inc.reporterName || 'Anonymous'}
+                                </span>
+                                {inc.reporterEmail && (
+                                  <span className="text-[10px] text-slate-400 truncate block">{inc.reporterEmail}</span>
+                                )}
+                              </div>
+                              <div className="bg-slate-50 p-2 rounded border border-slate-200/60">
+                                <span className="text-[10px] text-slate-400 block uppercase font-medium">People Affected</span>
+                                <span className="font-semibold text-slate-800 block">
+                                  {inc.peopleAffected ? `${inc.peopleAffected} individuals` : 'Unspecified'}
+                                </span>
+                              </div>
+                              <div className="bg-slate-50 p-2 rounded border border-slate-200/60 col-span-2 sm:col-span-1">
+                                <span className="text-[10px] text-slate-400 block uppercase font-medium">GPS Telemetry</span>
+                                <span className="font-mono text-[11px] text-slate-700 truncate block">
+                                  {inc.latitude && inc.longitude ? `${inc.latitude.toFixed(4)}, ${inc.longitude.toFixed(4)}` : 'Location only'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Evidence Photos */}
+                            {inc.evidenceUrls && inc.evidenceUrls.length > 0 && (
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">
+                                  Photos & Evidence ({inc.evidenceUrls.length})
+                                </span>
+                                <div className="flex gap-2 overflow-x-auto pb-1">
+                                  {inc.evidenceUrls.map((url, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="relative h-14 w-20 rounded border border-slate-200 overflow-hidden shrink-0 group hover:ring-2 hover:ring-blue-500 transition-all"
+                                    >
+                                      <img
+                                        src={url}
+                                        alt={`Evidence ${idx + 1}`}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                      />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Action Toolbar with Ask AI Button */}
+                            <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100">
+                              <IncidentAiChat
+                                incident={inc}
+                                buttonVariant="primary"
+                                buttonSize="sm"
+                                buttonLabel="Ask AI about this incident"
+                                buttonClassName="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-lg"
+                              />
+
+                              <Link href={`/admin/incidents/${inc.incidentId}`}>
+                                <Button variant="outline" size="sm" className="text-xs h-8 flex items-center gap-1">
+                                  <span>Full Dossier</span>
+                                  <ExternalLink size={12} />
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <ChevronRight size={16} className="text-slate-400 shrink-0" />
-                    </Link>
-                  ))}
+                    )
+                  })}
               </div>
             )}
           </CardBody>

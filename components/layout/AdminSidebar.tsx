@@ -3,7 +3,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
   FileText,
@@ -80,7 +80,14 @@ export function AdminSidebar({
   unreadCount = 0,
 }: AdminSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const { signOut, appUser } = useAuth()
+
+  function handleSignOut() {
+    void signOut()
+    onClose()
+    router.replace('/login')
+  }
 
   function isActive(href: string) {
     if (href === '/admin/dashboard') return pathname === href
@@ -188,7 +195,7 @@ export function AdminSidebar({
               <p className="text-[10px] text-slate-500 truncate capitalize">{appUser?.role ?? 'admin'}</p>
             </div>
             <button
-              onClick={() => signOut()}
+              onClick={handleSignOut}
               className="text-slate-500 hover:text-red-400 transition-colors p-1 rounded"
               aria-label="Sign out"
               title="Sign out"

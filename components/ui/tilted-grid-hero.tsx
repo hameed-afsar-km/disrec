@@ -145,11 +145,11 @@ export function TiltedGridHero({
   const tile = `tgh-t-${id}`;
   const bend = (Math.min(85, Math.max(5, curve)) * Math.PI) / 180;
 
-  // Null until the observer has measured the hero. The band stays hidden
-  // until then, so a first paint laid out for the wrong size never shows.
-  const [layout, setLayout] = React.useState<ReturnType<typeof measure> | null>(
-    null,
+  // Layout measurement with reliable default so first paint is never invisible
+  const [layout, setLayout] = React.useState<ReturnType<typeof measure>>(() =>
+    measure(1200, 600, tileHeight, aspectRatio, gap, bend)
   );
+  const [measuredHeight, setMeasuredHeight] = React.useState<number>(600);
 
   // The image each tile shows, as a position in the run of images. It
   // only changes when the tile wraps, which is out of sight, so a resize
@@ -160,15 +160,11 @@ export function TiltedGridHero({
     const el = ref.current;
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
+      const width = entry.contentRect.width || el.clientWidth || 1200;
+      const height = entry.contentRect.height || el.clientHeight || 600;
+      setMeasuredHeight(height);
       const next = measure(width, height, tileHeight, aspectRatio, gap, bend);
-      setLayout((prev) =>
-        prev?.columns === next.columns &&
-        prev.sweep === next.sweep &&
-        prev.unit === next.unit
-          ? prev
-          : next,
-      );
+      setLayout(next);
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -177,16 +173,22 @@ export function TiltedGridHero({
   // Fetch every image up front. A tile picks up its next one just before
   // it comes back into view, too late to start loading it then.
   React.useEffect(() => {
-    for (const { src } of images) new Image().src = src;
+    for (const { src } of images) {
+      if (typeof window !== "undefined") {
+        const img = new window.Image();
+        img.src = src;
+      }
+    }
   }, [images]);
 
-  const { columns, sweep, unit, limit } =
-    layout ?? measure(1200, 560, tileHeight, aspectRatio, gap, bend);
+  const { columns, sweep, unit, limit } = layout;
 
   // Every length is a multiple of the tile's height, which follows the
   // hero's height until MAX_WIDTH caps it on narrow screens.
+  // Fallback to measured pixel height if cqh resolves to 0.
+  const fallbackTileH = +(measuredHeight * (tileHeight / 100)).toFixed(2);
   const u = (n: number) =>
-    `calc(${+n.toFixed(4)} * min(${tileHeight}cqh, ${+(
+    `calc(${+n.toFixed(4)} * min(max(${tileHeight}cqh, ${fallbackTileH}px), ${+(
       MAX_WIDTH / aspectRatio
     ).toFixed(4)}cqw))`;
 

@@ -146,13 +146,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function handleSignOut() {
     clearMockSession()
+    // These cookies are used by middleware to gate routes for both Firebase and mock sessions.
+    // Firebase's client SDK does not manage them, so they must be cleared explicitly.
+    document.cookie = 'auth-token=; path=/; max-age=0; SameSite=Lax'
+    document.cookie = 'user-role=; path=/; max-age=0; SameSite=Lax'
+    // Clear the UI immediately. This keeps sign-out responsive even if Firebase's
+    // network cleanup takes longer than the route transition.
+    setFirebaseUser(null)
+    setAppUser(null)
     try {
       await fbSignOut(auth)
     } catch {
       // ignore
     }
-    setFirebaseUser(null)
-    setAppUser(null)
   }
 
   return (

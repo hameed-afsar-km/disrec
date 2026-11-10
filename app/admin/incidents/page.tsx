@@ -1,7 +1,7 @@
 // app/admin/incidents/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { ConfirmDialog } from '@/components/ui/Modal'
 import {
   Search, Filter, ChevronRight, CheckCircle2, AlertTriangle,
-  Trash2, ShieldCheck, RefreshCw, Eye
+  Trash2, ShieldCheck, RefreshCw, Eye, ChevronDown, ChevronUp, MessageCircle
 } from 'lucide-react'
 import {
   subscribeToAllIncidents,
@@ -24,6 +24,7 @@ import { useAuth } from '@/components/auth/AuthProvider'
 import { formatDate, timeAgo, categoryIcons } from '@/lib/utils'
 import type { Incident, IncidentStatus, Severity } from '@/lib/types'
 import { CATEGORY_LABELS, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/types'
+import { IncidentAiChat } from '@/components/admin/IncidentAiChat'
 import { toast } from 'sonner'
 import { deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -32,6 +33,9 @@ export default function AdminIncidentsPage() {
   const { firebaseUser, appUser } = useAuth()
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Expand row state
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null)
 
   // Filters
   const [search, setSearch] = useState('')

@@ -66,8 +66,8 @@ export function AdminTopbar({
 
   async function handleSignOut() {
     setDropdownOpen(false)
-    await signOut()
-    router.push('/login')
+    void signOut()
+    router.replace('/login')
   }
 
   return (

@@ -1,9 +1,9 @@
 // components/layout/Navbar.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { Button } from '@/components/ui/Button'
 import {
@@ -30,16 +30,36 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { firebaseUser, appUser, isAdmin, signOut } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', handler, { passive: true })
     return () => window.removeEventListener('scroll', handler)
   }, [])
+
+  useEffect(() => {
+    function closeUserMenuOnOutsideClick(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', closeUserMenuOnOutsideClick)
+    return () => document.removeEventListener('mousedown', closeUserMenuOnOutsideClick)
+  }, [])
+
+  function handleSignOut() {
+    setMobileOpen(false)
+    setUserMenuOpen(false)
+    void signOut()
+    router.replace('/login')
+  }
 
   return (
     <header className="sticky top-0 z-40 w-full px-3 pt-3 sm:px-6 sm:pt-4">
@@ -99,7 +119,7 @@ export function Navbar() {
                   </Button>
                 </Link>
                 {/* User menu */}
-                <div className="relative">
+                <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setUserMenuOpen((v) => !v)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
@@ -144,7 +164,7 @@ export function Navbar() {
                         Notifications
                       </Link>
                       <button
-                        onClick={() => { setUserMenuOpen(false); signOut() }}
+                        onClick={handleSignOut}
                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                       >
                         <LogOut size={14} />
@@ -210,7 +230,7 @@ export function Navbar() {
                     <Button variant="outline" size="sm" className="w-full">My Dashboard</Button>
                   </Link>
                   <button
-                    onClick={() => { setMobileOpen(false); signOut() }}
+                    onClick={handleSignOut}
                     className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
                   >
                     <LogOut size={14} /> Sign Out
@@ -227,10 +247,6 @@ export function Navbar() {
         )}
       </nav>
 
-      {/* Close user menu on outside click */}
-      {userMenuOpen && (
-        <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-      )}
     </header>
   )
 }

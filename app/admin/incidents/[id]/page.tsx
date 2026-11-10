@@ -26,6 +26,7 @@ import { formatDateTime, timeAgo, categoryIcons } from '@/lib/utils'
 import type { Incident, IncidentUpdate, IncidentStatus, Severity } from '@/lib/types'
 import { CATEGORY_LABELS, SEVERITY_LABELS, STATUS_LABELS } from '@/lib/types'
 import { toast } from 'sonner'
+import { IncidentAiChat } from '@/components/admin/IncidentAiChat'
 
 export default function AdminIncidentDetailPage({
   params,
@@ -472,6 +473,7 @@ export default function AdminIncidentDetailPage({
               >
                 <Sparkles size={13} /> {aiAnalysis ? 'Re-Analyze with AI' : 'Analyze Incident with AI'}
               </Button>
+              <IncidentAiChat incident={incident} />
             </CardBody>
           </Card>
         </div>

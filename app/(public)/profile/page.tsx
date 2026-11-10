@@ -112,8 +112,8 @@ export default function ProfilePage() {
           size="sm"
           className="text-red-600 hover:bg-red-50 border-red-200"
           onClick={() => {
-            signOut()
-            router.push('/')
+            void signOut()
+            router.replace('/login')
           }}
         >
           <LogOut size={14} /> Sign Out

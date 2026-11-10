@@ -13,11 +13,44 @@ interface ChatMessage {
   content: string
 }
 
+interface IncidentContext {
+  incidentId?: string
+  title?: string
+  description?: string
+  category?: string
+  severity?: string
+  status?: string
+  verified?: boolean
+  location?: string
+  peopleAffected?: number
+  createdAt?: string
+}
+
+function buildIncidentContext(incident?: IncidentContext): string | null {
+  if (!incident?.incidentId || !incident.title) return null
+
+  const details = [
+    `Incident ID: ${incident.incidentId}`,
+    `Title: ${incident.title}`,
+    `Category: ${incident.category || 'Not specified'}`,
+    `Severity: ${incident.severity || 'Not specified'}`,
+    `Status: ${incident.status || 'Not specified'}`,
+    `Verified: ${incident.verified ? 'Yes' : 'No'}`,
+    `Location: ${incident.location || 'Not specified'}`,
+    `People affected: ${incident.peopleAffected ?? 'Not specified'}`,
+    `Reported: ${incident.createdAt || 'Not specified'}`,
+    `Narrative: ${(incident.description || 'Not provided').slice(0, 4000)}`,
+  ]
+
+  return `\n\nINCIDENT-SPECIFIC CONTEXT (use this to answer the administrator's question; do not invent missing facts):\n${details.join('\n')}`
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { messages, language } = (await request.json()) as {
+    const { messages, language, incident } = (await request.json()) as {
       messages: ChatMessage[]
       language?: string
+      incident?: IncidentContext
     }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -26,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Limit conversation history to last 20 messages to stay within token limits
     const recentMessages = messages.slice(-20)
-    const systemPrompt = buildEmergencySystemPrompt(language || DEFAULT_AI_LANGUAGE)
+    const systemPrompt = `${buildEmergencySystemPrompt(language || DEFAULT_AI_LANGUAGE)}${buildIncidentContext(incident) || ''}`
 
     let reply: string | null = null
     let provider: 'groq' | 'ollama' = 'groq'
